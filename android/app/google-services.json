@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "373206170368",
+    "firebase_url": "https://sportsmart-629ee.firebaseio.com",
+    "project_id": "sportsmart-629ee",
+    "storage_bucket": "sportsmart-629ee.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373206170368:android:49c2827b8bbc7fabcc91e5",
+        "android_client_info": {
+          "package_name": "com.sportsmart"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "373206170368-1rotuek648i5r50a9fgcc0eqp3r0op9b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpm2zMeq-jCs8wZTFhqQT8ykyd1zBJ-hc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "373206170368-1rotuek648i5r50a9fgcc0eqp3r0op9b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
