@@ -1,7 +1,5 @@
-import React, { Component } from 'react'
-import { Text, View } from 'react-native'
-
-import Icon from "react-native-vector-icons/MaterialIcons";
+import React, { Component } from "react"
+import { Text, View } from "react-native"
 
 class NotifiersScreen extends Component {
   constructor(props) {

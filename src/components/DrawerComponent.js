@@ -1,25 +1,50 @@
 import React, { Component } from "react"
-import { Text, View } from "react-native"
-import { Drawer, Avatar, IconButton } from "react-native-paper";
+import { Text, TouchableOpacity, StyleSheet } from "react-native"
+import { Drawer, Divider } from "react-native-paper";
+import { Icon } from "react-native-elements";
+import * as colors from "../media/colors";
 
 export default class DrawerComponent extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      activeDrawerItem: 0,
+      drawerItems: this.props.navigation.state.routes
+    };
+  }
+
   render() {
     return (
-      <Drawer.Section style={{ flex: 1, marginBottom: 60, backgroundColor: "#fff", borderRadius: 20 }}>
-        <View style={{ padding: 15, display: "flex", justifyContent: "center" }}>
-          <IconButton
-            icon="settings"
-            color="#022e4b"
-            size={24}
-            onPress={() => console.log("Pressed")}
-            style={{ alignSelf: "flex-end", margin: -1 }}
-          />
-          <Avatar.Image size={45} style={{ marginTop: 5, elevation: 1 }} source={{ uri: "https://picsum.photos/700" }} />
+      <Drawer.Section style={{ flex: 1, backgroundColor: colors.light }}>
+        <TouchableOpacity style={{ padding: 25, display: "flex", justifyContent: "center" }}>
+          <Icon type="material-community" name="account" color={colors.light} size={48} containerStyle={{ borderRadius: 27, width: 56, height: 56, backgroundColor: colors.blue }} />
           <Text style={{ color: "#022e4b", fontSize: 20, fontWeight: "500" }} >Name</Text>
           <Text style={{ color: "#375777", fontSize: 12, fontWeight: "300" }} >EmailEmailEmailEmailEmail</Text>
-        </View>
-        <Text>[[DRAWER ITEMS]]</Text>
+        </TouchableOpacity>
+        <Divider style={{ marginHorizontal: 10, marginBottom: 15, backgroundColor: colors.dark }} />
+        {this.state.drawerItems.map((item, index) => {
+          return (
+            <Drawer.Item
+              key={index}
+              label={item.routeName}
+              active={this.state.activeDrawerItem === item.key}
+              onPress={() => {
+                this.setState({ activeDrawerItem: item.key }, () => {
+                  this.props.navigation.navigate(item.key);
+                });
+              }}
+              style={styles.drawerItem}
+              theme={{ colors: { primary: colors.dark } }}
+            />
+          )
+        })}
       </Drawer.Section>
     );
   }
 }
+
+const styles = StyleSheet.create({
+  drawerItem: {
+    fontSize: 24
+  }
+});

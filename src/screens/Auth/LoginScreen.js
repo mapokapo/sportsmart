@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Image, Platform } from "react-native";
-import { Button, Icon } from "react-native-elements";
+import { Button, SocialIcon } from "react-native-elements";
 import { TextInput, Portal, Dialog } from "react-native-paper";
 import { firebase } from "@react-native-firebase/auth";
 
@@ -14,7 +14,9 @@ export default class LoginScreen extends Component {
       currentError: null,
       keyboardOpened: false,
       dialogText: null,
-      currentTimeout: null
+      currentTimeout: null,
+      emailError: false,
+      passError: false
     }
 
     if (Platform.OS === "android") {
@@ -45,18 +47,6 @@ export default class LoginScreen extends Component {
   emailCheck = (text) => {
     return /^\w+@\w+\.\w+$/g.test(text);
   }
-
-  /*passwordCheck = (text) => new Promise((resolve, reject) => {
-    if (text.length >= 8) {
-      if (/^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/g.test(text)) {
-        resolve();
-      } else {
-        reject("Password must include at least one letter, one symbol, and one number");
-      }
-    } else {
-      reject("Password must be at least 8 characters long");
-    }
-  })*/
 
   triggerError = (msg) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -116,7 +106,7 @@ export default class LoginScreen extends Component {
           default:
             this.triggerDialog("An unhandled error has occured: \n" + err.message);
         }
-        this.setState({ loading: false })
+        this.setState({ loading: false });
       });
     });
   }
@@ -138,7 +128,15 @@ export default class LoginScreen extends Component {
             style={{ width: 225, height: 225 }}
           />
         </View>)}
-        <View style={{ display: "flex", flex: 3, paddingTop: 15, paddingTop: 15, justifyContent: "center", backgroundColor: "#D8E8F0", borderTopRightRadius: this.state.keyboardOpened ? 0 : 25, borderTopLeftRadius: this.state.keyboardOpened ? 0 : 25 }}>
+          <View style={{ flex: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center" }}>
+            <TouchableOpacity>
+              <SocialIcon type="google" raised color={colors.dark} style={{ marginTop: 20, width: this.state.keyboardOpened ? 48 : 32, height: this.state.keyboardOpened ? 48 : 32 }} iconSize={this.state.keyboardOpened ? 24 : 16} />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <SocialIcon type="facebook" raised color={colors.dark} style={{ marginTop: 20, width: this.state.keyboardOpened ? 48 : 32, height: this.state.keyboardOpened ? 48 : 32 }} iconSize={this.state.keyboardOpened ? 24 : 16} />
+            </TouchableOpacity>
+          </View>
+        <View style={{ display: "flex", flex: 3, paddingTop: 15, paddingTop: 15, justifyContent: "center", backgroundColor: colors.light, borderTopRightRadius: this.state.keyboardOpened ? 0 : 25, borderTopLeftRadius: this.state.keyboardOpened ? 0 : 25 }}>
           <View style={{ marginHorizontal: 15, flex: 5, display: "flex", justifyContent: "center" }}>
             <TextInput
               autoCapitalize="none"
@@ -154,8 +152,8 @@ export default class LoginScreen extends Component {
               })}
               theme={{
                 colors: {
-                  placeholder: "#33425B", text: "#33425B", primary: "#33425B",
-                  underlineColor: "transparent", background: "#D8E8F0"
+                  placeholder: colors.dark, text: colors.dark, primary: colors.dark,
+                  underlineColor: "transparent", background: colors.light
                 }
             }}
             />
@@ -175,29 +173,21 @@ export default class LoginScreen extends Component {
               })}
               theme={{
                 colors: {
-                  placeholder: "#33425B", text: "#33425B", primary: "#33425B",
-                  underlineColor: "transparent", background: "#D8E8F0"
+                  placeholder: colors.dark, text: colors.dark, primary: colors.dark,
+                  underlineColor: "transparent", background: colors.light
                 }
-             }}
+              }}
             />
             <View style={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row" }}>
-              <TouchableOpacity><Text style={{ color: "#3498db", marginTop: -1 }}>Don't have an account?</Text></TouchableOpacity>
-              <TouchableOpacity><Text style={{ color: "#3498db", marginTop: -1 }}>Forgot your password?</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>Don't have an account?</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>Forgot your password?</Text></TouchableOpacity>
             </View>
           </View>
           {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
-          <View style={{ flex: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center" }}>
-            <TouchableOpacity>
-              <Icon name="google" type="font-awesome" color="#33425B" size={24} />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Icon name="facebook" type="font-awesome" color="#33425B" size={24} />
-            </TouchableOpacity>
-          </View>
           <View style={{ marginHorizontal: 15, flex: 2 }}>
             <Button
-              titleStyle={{ color: "#D8E8F0" }}
-              buttonStyle={{ backgroundColor: "#F33535" }}
+              titleStyle={{ color: colors.light }}
+              buttonStyle={{ backgroundColor: colors.red }}
               containerStyle={{ marginTop: "auto", marginBottom: "auto" }}
               title="Login"
               type="solid"
@@ -212,18 +202,20 @@ export default class LoginScreen extends Component {
   }
 }
 
+import * as colors from "../../media/colors";
+
 const styles = StyleSheet.create({
   mainWrapper: {
     display: "flex",
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "#33425B"
+    backgroundColor: colors.dark
   },
   textInput: {
     marginBottom: 5
   },
   error: {
-    color: "#d42f2f",
+    color: colors.red,
     fontSize: 16,
     textAlign: "center",
     marginTop: 10,
