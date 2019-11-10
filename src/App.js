@@ -53,74 +53,53 @@ import { Icon } from "react-native-elements";
   }
 */
 
-const RunningStack = createStackNavigator({
-  Running: {
-    screen: RunningScreen,
-    navigationOptions: ({ navigation }) => {
-      return {
-        header: <AppHeader navigation={navigation} />
-      };
-    }
-  }
-});
-
 const NotifiersStack = createStackNavigator({
   Notifiers: {
-    screen: NotifiersScreen,
-    navigationOptions: ({ navigation }) => {
-      return {
-        header: <AppHeader navigation={navigation} />
-      };
-    }
+    screen: NotifiersScreen
   },
   CreateNotifier: {
-    screen: CreateNotifierScreen,
-    navigationOptions: ({ navigation }) => {
-      return {
-        header: <AppHeader navigation={navigation} />
-      };
-    }
-  }
-});
-
-const ProfileStack = createStackNavigator({
-  Profile: {
-    screen: ProfileScreen,
-    navigationOptions: ({ navigation }) => {
-      return {
-        header: <AppHeader navigation={navigation} />
-      };
-    }
-  }
-});
-
-const BottomTabNavigator = createMaterialBottomTabNavigator({
-  Running: {
-    screen: RunningStack,
-    navigationOptions: {
-      tabBarIcon: ({ focused, horizontal, tintColor }) => (<Icon type="material-community" name="run" color={tintColor} size={24} />),
-      tabBarBadge: true
-    }
-  },
-  Notifiers: {
-    screen: NotifiersStack,
-    navigationOptions: {
-      tabBarIcon: ({ focused, horizontal, tintColor }) => (<Icon type="material-community" name="alarm" color={tintColor} size={24} />)
-    }
-  },
-  Profile: {
-    screen: ProfileStack,
-    navigationOptions: {
-      tabBarIcon: ({ focused, horizontal, tintColor }) => (<Icon type="material-community" name="account" color={tintColor} size={24} />)
-    }
+    screen: CreateNotifierScreen
   }
 }, {
-  shifting: true,
-  barStyle: {
-    backgroundColor: colors.dark
-  },
-  activeColor: colors.red,
-  inactiveColor: colors.light
+  headerMode: "none",
+  navigationOptions: {
+    header: null
+  }
+});
+
+const BottomTabNavigator = createStackNavigator({
+  TabsStack: createMaterialBottomTabNavigator({
+    Running: {
+      screen: RunningScreen,
+      navigationOptions: {
+        tabBarIcon: ({ focused, horizontal, tintColor }) => (<Icon type="material-community" name="run" color={tintColor} size={24} />),
+        tabBarBadge: true
+      }
+    },
+    Notifiers: {
+      screen: NotifiersStack,
+      navigationOptions: {
+        tabBarIcon: ({ focused, horizontal, tintColor }) => (<Icon type="material-community" name="alarm" color={tintColor} size={24} />)
+      }
+    },
+    Profile: {
+      screen: ProfileScreen,
+      navigationOptions: {
+        tabBarIcon: ({ focused, horizontal, tintColor }) => (<Icon type="material-community" name="account" color={tintColor} size={24} />)
+      }
+    }
+  }, {
+    shifting: true,
+    barStyle: {
+      backgroundColor: colors.dark
+    },
+    activeColor: colors.red,
+    inactiveColor: colors.light
+  })
+}, {
+  defaultNavigationOptions: ({ navigation }) => ({
+    header: <AppHeader navigation={navigation} />
+  })
 });
 
 /* Switch 1 */

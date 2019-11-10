@@ -8,9 +8,16 @@ export default class DrawerComponent extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      activeDrawerItem: 0,
-      drawerItems: this.props.navigation.state.routes
+      drawerItems: [
+        "Together",
+        "Activity",
+        "Statistics",
+        "Settings",
+        "Support"
+      ]
     };
+
+    console.log(this.props.navigation.state);
   }
 
   render() {
@@ -26,12 +33,9 @@ export default class DrawerComponent extends Component {
           return (
             <Drawer.Item
               key={index}
-              label={item.routeName}
-              active={this.state.activeDrawerItem === item.key}
+              label={item}
               onPress={() => {
-                this.setState({ activeDrawerItem: item.key }, () => {
-                  this.props.navigation.navigate(item.key);
-                });
+                this.props.navigation.navigate(item);
               }}
               style={styles.drawerItem}
               theme={{ colors: { primary: colors.dark } }}

@@ -90,7 +90,6 @@ export default class LoginScreen extends Component {
       });
       return;
     }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     this.setState({ loading: true }, () => {
       firebase.auth().signInWithEmailAndPassword(this.state.emailText, this.state.passText).then(() => {
         this.setState({ loading: false });

@@ -1,5 +1,8 @@
 import React, { Component } from "react"
 import { Text, View } from "react-native"
+import { Button } from "react-native-elements";
+import * as colors from "../../media/colors";
+import auth from "@react-native-firebase/auth";
 
 export default class ProfileScreen extends Component {
   constructor(props) {
@@ -11,6 +14,16 @@ export default class ProfileScreen extends Component {
     return (
       <View>
         <Text> ProfileScreen </Text>
+        <Button
+          title="Sign Out"
+          type="solid"
+          buttonStyle={{ backgroundColor: colors.dark }}
+          onPress={() => {
+            auth().signOut().then(() => {
+              this.props.navigation.navigate("Auth");
+            });
+          }}
+        />
       </View>
     )
   }

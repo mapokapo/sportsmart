@@ -1,11 +1,14 @@
 import React, { Component } from 'react'
+import { LayoutAnimation } from "react-native";
 import { Appbar, Surface } from "react-native-paper";
 import * as colors from "../media/colors";
 
 export default class AppHeader extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      setting: this.props.navigation.dangerouslyGetParent().state.routes[0].key
+    };
   }
 
   render() {
@@ -14,14 +17,15 @@ export default class AppHeader extends Component {
         <Appbar.Header style={{ backgroundColor: colors.dark }}>
           <Appbar.Action
             color={colors.light}
-            icon="menu"
+            icon={this.state.setting === "Tabs" ? "arrow-back" : "menu"}
             onPress={() => {
-              this.props.navigation.toggleDrawer();
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+              this.state.setting === "Tabs" ? this.props.navigation.goBack() : this.props.navigation.toggleDrawer();
             }}
           />
           <Appbar.Content
             color={colors.light}
-            title={this.props.navigation.state.routeName}
+            title={this.state.setting === "Tabs" ? this.props.navigation.state.key : this.props.navigation.state.routes[this.props.navigation.state.index].key}
           />
         </Appbar.Header>
       </Surface>
