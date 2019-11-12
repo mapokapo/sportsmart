@@ -1,5 +1,5 @@
-import React, { Component } from "react"
-import { Text, TouchableOpacity, StyleSheet } from "react-native"
+import React, { Component } from "react";
+import { Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Drawer, Divider } from "react-native-paper";
 import { Icon } from "react-native-elements";
 import * as colors from "../media/colors";
@@ -16,8 +16,6 @@ export default class DrawerComponent extends Component {
         "Support"
       ]
     };
-
-    console.log(this.props.navigation.state);
   }
 
   render() {

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Platform, Dimensions } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Platform, Dimensions, ToastAndroid } from "react-native";
 import { Button, Icon } from "react-native-elements";
 import { TextInput, Menu, Portal, Dialog } from "react-native-paper";
 import auth from "@react-native-firebase/auth";
@@ -37,12 +37,10 @@ export default class RegisterScreen extends Component {
   }
 
   _keyboardShown = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     this.setState({ keyboardOpened: true });
   }
 
   _keyboardHidden = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     this.setState({ keyboardOpened: false });
   }
 
@@ -160,7 +158,6 @@ export default class RegisterScreen extends Component {
       })
       return;
     }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     this.setState({ loading: true }, () => {
       auth().createUserWithEmailAndPassword(this.state.emailText, this.state.passText).then(userCredential => {
         firestore().collection("users").add({
@@ -173,7 +170,8 @@ export default class RegisterScreen extends Component {
           profileImage: this.state.profileImage || null
         }).then(() => {
           this.setState({ loading: false });
-          this.props.navigation.navigate("Main");
+          this.props.navigation.navigate("App");
+          ToastAndroid.show("Successfully registered", ToastAndroid.SHORT);
         }).catch(err => {
           switch(err.code) {
             case "auth/user-not-found":
@@ -205,7 +203,7 @@ export default class RegisterScreen extends Component {
 
   render() {
     return (
-      <KeyboardAwareScrollView keyboardShouldPersistTaps="always" keyboardDismissMode="on-drag" contentContainerStyle={{ flexGrow: 1 }} style={styles.mainWrapper}>
+      <KeyboardAwareScrollView enableOnAndroid={true} keyboardShouldPersistTaps="always" keyboardDismissMode="on-drag" contentContainerStyle={{ flexGrow: 1 }} style={styles.mainWrapper}>
         <Portal>
           <Dialog visible={this.state.dialogText !== null} onDismiss={this.hideDialog}>
             <Dialog.Title>Error</Dialog.Title>
@@ -230,9 +228,7 @@ export default class RegisterScreen extends Component {
               label="Name"
               value={this.state.nameText}
               onChangeText={text => this.setState({ nameText: text, nameError: false })}
-              onFocus={() => this.setState({ nameError: false, keyboardOpened: true }, () => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-              })}
+              onFocus={() => this.setState({ nameError: false, keyboardOpened: true })}
               theme={{
                 colors: {
                   placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -251,9 +247,7 @@ export default class RegisterScreen extends Component {
               label="Password"
               value={this.state.passText}
               onChangeText={text => this.setState({ passText: text, passError: false })}
-              onFocus={() => this.setState({ passError: false, keyboardOpened: true }, () => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-              })}
+              onFocus={() => this.setState({ passError: false, keyboardOpened: true })}
               theme={{
                 colors: {
                   placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -273,9 +267,7 @@ export default class RegisterScreen extends Component {
             label="Email"
             value={this.state.emailText}
             onChangeText={text => this.setState({ emailText: text, emailError: false })}
-            onFocus={() => this.setState({ emailError: false, keyboardOpened: true }, () => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-            })}
+            onFocus={() => this.setState({ emailError: false, keyboardOpened: true })}
             theme={{
               colors: {
                 placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -291,9 +283,7 @@ export default class RegisterScreen extends Component {
             label="Bio (optional)"
             value={this.state.bioText}
             onChangeText={text => this.setState({ bioText: text })}
-            onFocus={() => this.setState({ keyboardOpened: true }, () => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-            })}
+            onFocus={() => this.setState({ keyboardOpened: true })}
             theme={{
               colors: {
                 placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -319,9 +309,7 @@ export default class RegisterScreen extends Component {
                 label="Height"
                 value={this.state.heightText}
                 onChangeText={text => this.setState({ heightText: text, heightError: false })}
-                onFocus={() => this.setState({ heightError: false, keyboardOpened: true }, () => {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                })}
+                onFocus={() => this.setState({ heightError: false, keyboardOpened: true })}
                 theme={{
                   colors: {
                     placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -341,9 +329,7 @@ export default class RegisterScreen extends Component {
                 label="Weight"
                 value={this.state.weightText}
                 onChangeText={text => this.setState({ weightText: text, weightError: false })}
-                onFocus={() => this.setState({ weightError: false, keyboardOpened: true }, () => {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                })}
+                onFocus={() => this.setState({ weightError: false, keyboardOpened: true })}
                 theme={{
                   colors: {
                     placeholder: colors.dark, text: colors.dark, primary: colors.dark,

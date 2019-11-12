@@ -116,12 +116,6 @@ const DrawerNavigator = createDrawerNavigator({
 
 /* Switch 2 */
 const AuthStack = createStackNavigator({
-  Loading: {
-    screen: LoadingScreen,
-    navigationOptions: {
-      header: null
-    }
-  },
   Login: {
     screen: LoginScreen,
     navigationOptions: {
@@ -137,16 +131,18 @@ const AuthStack = createStackNavigator({
       }
     }
   },
-  ForgotPass: ForgotPassScreen,
+  ForgotPass: ForgotPassScreen
+}, {
+  initialRouteName: "Login"
+});
+
+const AppSwitchNavigator = createSwitchNavigator({
+  Loading: LoadingScreen,
+  Auth: AuthStack,
+  App: DrawerNavigator
+},
+{
   initialRouteName: "Loading"
 });
 
-const SwitchNavigator = createSwitchNavigator({
-  Auth: AuthStack,
-  Main: DrawerNavigator
-},
-{
-  initialRouteName: "Auth"
-});
-
-export default createAppContainer(SwitchNavigator);
+export default createAppContainer(AppSwitchNavigator);

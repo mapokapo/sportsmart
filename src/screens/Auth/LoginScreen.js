@@ -93,7 +93,7 @@ export default class LoginScreen extends Component {
     this.setState({ loading: true }, () => {
       firebase.auth().signInWithEmailAndPassword(this.state.emailText, this.state.passText).then(() => {
         this.setState({ loading: false });
-        this.props.navigation.navigate("Main");
+        this.props.navigation.navigate("App");
       }).catch(err => {
         switch(err.code) {
           case "auth/user-not-found":

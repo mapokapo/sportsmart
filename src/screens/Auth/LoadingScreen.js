@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import { Text, View, ActivityIndicator, StatusBar } from "react-native";
+import { View, ActivityIndicator, StatusBar } from "react-native";
+import { NavigationActions } from "react-navigation";
 import * as colors from "../../media/colors";
 import auth from "@react-native-firebase/auth";
 
@@ -10,7 +11,7 @@ export default class LoadingScreen extends Component {
 
   componentDidMount = () => {
     this.unsub = auth().onAuthStateChanged(user => {
-      this.props.navigation.navigate(user ? "Main" : "Login");
+        this.props.navigation.navigate(user ? "App" : "Auth");
     });
   }
 
