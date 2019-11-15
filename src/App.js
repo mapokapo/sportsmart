@@ -72,8 +72,7 @@ const BottomTabNavigator = createStackNavigator({
     Running: {
       screen: RunningScreen,
       navigationOptions: {
-        tabBarIcon: ({ focused, horizontal, tintColor }) => (<Icon type="material-community" name="run" color={tintColor} size={24} />),
-        tabBarBadge: true
+        tabBarIcon: ({ focused, horizontal, tintColor }) => (<Icon type="material-community" name="run" color={tintColor} size={24} />)
       }
     },
     Notifiers: {
