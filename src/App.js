@@ -11,7 +11,6 @@ import React from "react"
 import { createAppContainer, createSwitchNavigator } from "react-navigation";
 import { createDrawerNavigator } from "react-navigation-drawer";
 import { createStackNavigator } from "react-navigation-stack";
-import { createMaterialBottomTabNavigator } from "react-navigation-material-bottom-tabs";
 
 /* SWITCH 1 */
 /* Tab Navigator Components */
@@ -90,7 +89,6 @@ const BottomTabNavigator = createStackNavigator({
     }
   }, {
     initialRouteName: "Running",
-    shifting: true,
     tabBarOptions: {
       activeTintColor: colors.red,
       inactiveTintColor: colors.light,
@@ -134,10 +132,20 @@ const AuthStack = createStackNavigator({
       headerTintColor: colors.light,
       headerStyle: {
         backgroundColor: colors.dark
-      }
+      },
+      headerTitle: "Register"
     }
   },
-  ForgotPass: ForgotPassScreen
+  ForgotPass: {
+    screen: ForgotPassScreen,
+    navigationOptions: {
+      headerTintColor: colors.light,
+      headerStyle: {
+        backgroundColor: colors.dark
+      },
+      headerTitle: "Reset Password"
+    }
+  }
 }, {
   initialRouteName: "Login"
 });

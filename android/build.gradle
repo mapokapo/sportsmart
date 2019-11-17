@@ -9,7 +9,6 @@ buildscript {
         supportLibVersion = "28.0.3"
         googlePlayServicesVersion = "17.0.0"
         androidMapsUtilsVersion = "0.5+"
-        googlePlayServicesAuthVersion = "17.0.0"
     }
     repositories {
         mavenCentral()

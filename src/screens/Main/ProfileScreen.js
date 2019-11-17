@@ -3,6 +3,7 @@ import { Text, View } from "react-native"
 import { Button } from "react-native-elements";
 import * as colors from "../../media/colors";
 import auth from "@react-native-firebase/auth";
+import { LoginManager } from "react-native-fbsdk";
 
 export default class ProfileScreen extends Component {
   constructor(props) {
@@ -19,6 +20,7 @@ export default class ProfileScreen extends Component {
           type="solid"
           buttonStyle={{ backgroundColor: colors.dark }}
           onPress={() => {
+            new LoginManager.logOut();
             auth().signOut().then(() => {
               this.props.navigation.navigate("Auth");
             });

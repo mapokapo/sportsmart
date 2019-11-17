@@ -6,7 +6,6 @@ import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
 import CustomPicker from "../../components/CustomPicker";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import ImagePicker from 'react-native-image-picker';
 
 const options = {
@@ -39,12 +38,20 @@ export default class RegisterScreen extends Component {
       currentTimeout: null,
       unit: "metric", /* safe user info */
       keyboardOpened: false,
-      profileImage: null /* safe user info */
+      profileImage: null /* safe user info */,
+      lowerInputFocused: false,
+      higherInputFocused: false
     }
 
     if (Platform.OS === "android") {
       UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
     }
+
+    this.pass = React.createRef();
+    this.email = React.createRef();
+    this.bio = React.createRef();
+    this.height = React.createRef();
+    this.weight = React.createRef();
   }
 
   _keyboardShown = () => {
@@ -52,7 +59,7 @@ export default class RegisterScreen extends Component {
   }
 
   _keyboardHidden = () => {
-    this.setState({ keyboardOpened: false });
+    this.setState({ keyboardOpened: false, lowerInputFocused: false, higherInputFocused: false });
   }
 
   componentDidMount = () => {
@@ -169,6 +176,7 @@ export default class RegisterScreen extends Component {
       })
       return;
     }
+    Keyboard.dismiss();
     this.setState({ loading: true }, () => {
       auth().createUserWithEmailAndPassword(this.state.emailText, this.state.passText).then(userCredential => {
         let date = new Date();
@@ -267,7 +275,7 @@ export default class RegisterScreen extends Component {
 
   render() {
     return (
-      <KeyboardAwareScrollView enableOnAndroid={true} keyboardShouldPersistTaps="always" keyboardDismissMode="on-drag" contentContainerStyle={{ flexGrow: 1 }} style={styles.mainWrapper}>
+      <View enableOnAndroid={true} keyboardShouldPersistTaps="always" keyboardDismissMode="on-drag" contentContainerStyle={{ flexGrow: 1 }} style={styles.mainWrapper}>
         <Portal>
           <Dialog visible={this.state.dialogText !== null} onDismiss={this.hideDialog}>
             <Dialog.Title>Error</Dialog.Title>
@@ -277,7 +285,7 @@ export default class RegisterScreen extends Component {
           </Dialog>
         </Portal>
         <View style={{ display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center", marginHorizontal: 15 }}>
-          <View style={{ width: 150, height: 150, marginRight: 10, display: "flex", justifyContent: "center", alignItems: "center" }}>
+          {!this.state.lowerInputFocused && (<View style={{ width: 150, height: 150, marginRight: 10, display: "flex", justifyContent: "center", alignItems: "center" }}>
             <TouchableOpacity onPress={() => {
               this.requestStoragePermission().then(() => {
                 ImagePicker.showImagePicker(options, (response) => {
@@ -294,11 +302,12 @@ export default class RegisterScreen extends Component {
                   source={{ uri: this.state.profileImage.uri }}
                   style={{ width: 125, height: 125 }}
                   containerStyle={{ overflow: "hidden", borderRadius: 125/2, elevation: 1 }}
+                  placeholderStyle={{ display: "none" }}
                 />
               )}
             </TouchableOpacity>
-          </View>
-          <View style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+          </View>)}
+          {!this.state.lowerInputFocused && (<View style={{ flex: 1, display: "flex", justifyContent: "center" }}>
             <TextInput
               autoCapitalize="words"
               textContentType="name"
@@ -308,7 +317,11 @@ export default class RegisterScreen extends Component {
               label="Name"
               value={this.state.nameText}
               onChangeText={text => this.setState({ nameText: text, nameError: false })}
-              onFocus={() => this.setState({ nameError: false, keyboardOpened: true })}
+              onFocus={() => this.setState({ nameError: false, keyboardOpened: true, higherInputFocused: true })}
+              onBlur={() => this.setState({ higherInputFocused: false })}
+              blurOnSubmit={false}
+              onSubmitEditing={() => this.pass.current.focus()}
+              returnKeyType="next"
               theme={{
                 colors: {
                   placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -327,7 +340,12 @@ export default class RegisterScreen extends Component {
               label="Password"
               value={this.state.passText}
               onChangeText={text => this.setState({ passText: text, passError: false })}
-              onFocus={() => this.setState({ passError: false, keyboardOpened: true })}
+              onFocus={() => this.setState({ passError: false, keyboardOpened: true, higherInputFocused: true })}
+              onBlur={() => this.setState({ higherInputFocused: false })}
+              blurOnSubmit={false}
+              ref={this.pass}
+              onSubmitEditing={() => this.email.current.focus()}
+              returnKeyType="next"
               theme={{
                 colors: {
                   placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -335,10 +353,10 @@ export default class RegisterScreen extends Component {
                 }
               }}
             />
-          </View>
+          </View>)}
         </View>
         <View style={{ flex: 10, display: "flex" }}>
-          <TextInput
+          {!this.state.lowerInputFocused && (<TextInput
             autoCapitalize="none"
             textContentType="emailAddress"
             error={this.state.emailError}
@@ -347,15 +365,20 @@ export default class RegisterScreen extends Component {
             label="Email"
             value={this.state.emailText}
             onChangeText={text => this.setState({ emailText: text, emailError: false })}
-            onFocus={() => this.setState({ emailError: false, keyboardOpened: true })}
+            onFocus={() => this.setState({ emailError: false, keyboardOpened: true, higherInputFocused: true })}
+            onBlur={() => this.setState({ higherInputFocused: false })}
+            blurOnSubmit={false}
+            ref={this.email}
+            onSubmitEditing={() => this.setState({ higherInputFocused: false, lowerInputFocused: true }, () => this.bio.current.focus())}
+            returnKeyType="next"
             theme={{
               colors: {
                 placeholder: colors.dark, text: colors.dark, primary: colors.dark,
                 underlineColor: "transparent", background: colors.light
               }
             }}
-          />
-          <TextInput
+          />)}
+          {!this.state.higherInputFocused && (<TextInput
             multiline={true}
             numberOfLines={5}
             style={{ marginBottom: 5, marginHorizontal: 15 }}
@@ -363,23 +386,28 @@ export default class RegisterScreen extends Component {
             label="Bio (optional)"
             value={this.state.bioText}
             onChangeText={text => this.setState({ bioText: text })}
-            onFocus={() => this.setState({ keyboardOpened: true })}
+            onFocus={() => this.setState({ keyboardOpened: true, lowerInputFocused: true })}
+            onBlur={() => this.setState({ lowerInputFocused: false })}
+            blurOnSubmit={false}
+            ref={this.bio}
+            onSubmitEditing={() => this.height.current.focus()}
+            returnKeyType="default"
             theme={{
               colors: {
                 placeholder: colors.dark, text: colors.dark, primary: colors.dark,
                 underlineColor: "transparent", background: colors.light
               }
             }}
-          />
-          <CustomPicker unit={this.state.unit} menuOnPress={() => this.setState({ unitPickerVisible: true })} visible={this.state.unitPickerVisible} onDismiss={() => this.setState({     unitPickerVisible: false })}>
+          />)}
+          {!this.state.higherInputFocused && (<CustomPicker unit={this.state.unit} menuOnPress={() => this.setState({ unitPickerVisible: true })} visible={this.state.unitPickerVisible} onDismiss={() => this.setState({ unitPickerVisible: false })}>
             <Menu.Item title="Metric" onPress={() => {
               this.setState({ unit: "metric", unitPickerVisible: false });
             }} />
             <Menu.Item title="Imperial" onPress={() => {
               this.setState({ unit: "imperial", unitPickerVisible: false });
             }} />
-          </CustomPicker>
-          <View style={{ display: "flex", flexDirection: "row" }}>
+          </CustomPicker>)}
+          {!this.state.higherInputFocused && (<View style={{ display: "flex", flexDirection: "row" }}>
             <View style={{ flex: 1, marginHorizontal: 15 }}>
               <TextInput
                 keyboardType="decimal-pad"
@@ -389,7 +417,12 @@ export default class RegisterScreen extends Component {
                 label="Height"
                 value={this.state.heightText}
                 onChangeText={text => this.setState({ heightText: text, heightError: false })}
-                onFocus={() => this.setState({ heightError: false, keyboardOpened: true })}
+                onFocus={() => this.setState({ heightError: false, keyboardOpened: true, lowerInputFocused: true })}
+                onBlur={() => this.setState({ lowerInputFocused: false })}
+                blurOnSubmit={false}
+                ref={this.height}
+                onSubmitEditing={() => this.weight.current.focus()}
+                returnKeyType="next"
                 theme={{
                   colors: {
                     placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -411,7 +444,12 @@ export default class RegisterScreen extends Component {
                 label="Weight"
                 value={this.state.weightText}
                 onChangeText={text => this.setState({ weightText: text, weightError: false })}
-                onFocus={() => this.setState({ weightError: false, keyboardOpened: true })}
+                onFocus={() => this.setState({ weightError: false, keyboardOpened: true, lowerInputFocused: true })}
+                onBlur={() => this.setState({ lowerInputFocused: false })}
+                blurOnSubmit={false}
+                ref={this.weight}
+                onSubmitEditing={() => this.handleRegister()}
+                returnKeyType="done"
                 theme={{
                   colors: {
                     placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -421,14 +459,15 @@ export default class RegisterScreen extends Component {
               />
               <View style={{ position: "absolute", right: 5, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
                 <Text style={{ color: colors.dark }}>{this.state.unit === "metric" ? "KG" : "LB"}</Text>
-                <Icon color={colors.dark} containerStyle={{ top: -4 }} type="material-community" name={"weight-" + (this.state.unit === "metric" ? "kilogram" : "pound")} size={26} />
+                <Icon color={colors.dark} containerStyle={{ top: -3 }} type="material-community" name={"weight-" + (this.state.unit === "metric" ? "kilogram" : "pound")} size={26} />
               </View>
             </View>
-          </View>
+          </View>)}
         </View>
         {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
         <View style={{ flex: 2, marginHorizontal: 15, display: "flex"}}>
           <Button
+            containerStyle={{ top: this.state.higherInputFocused ? -30 : 0 }}
             titleStyle={{ color: colors.light }}
             buttonStyle={{ backgroundColor: colors.red }}
             title="Register"
@@ -438,7 +477,7 @@ export default class RegisterScreen extends Component {
             onPress={this.handleRegister}
           />
         </View>
-      </KeyboardAwareScrollView>
+      </View>
     )
   }
 }
