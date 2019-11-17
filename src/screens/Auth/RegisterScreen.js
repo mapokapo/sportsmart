@@ -1,22 +1,32 @@
 import React, { Component } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Platform, Dimensions, ToastAndroid } from "react-native";
-import { Button, Icon } from "react-native-elements";
+import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Platform, PermissionsAndroid, ToastAndroid } from "react-native";
+import { Button, Icon, Image } from "react-native-elements";
 import { TextInput, Menu, Portal, Dialog } from "react-native-paper";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import storage from "@react-native-firebase/storage";
 import CustomPicker from "../../components/CustomPicker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import ImagePicker from 'react-native-image-picker';
+
+const options = {
+  title: "Select Image",
+  storageOptions: {
+    skipBackup: true,
+    path: "images",
+  },
+}
 
 export default class RegisterScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      nameText: "",
-      emailText: "",
+      nameText: "", /* safe user info */
+      emailText: "", /* safe user info */
       passText: "",
-      weightText: "",
-      heightText: "",
-      bioText: "",
+      weightText: "", /* safe user info */
+      heightText: "", /* safe user info */
+      bioText: "", /* safe user info */
       nameError: false,
       emailError: false,
       passError: false,
@@ -27,8 +37,9 @@ export default class RegisterScreen extends Component {
       keyboardOpened: false,
       dialogText: null,
       currentTimeout: null,
-      unit: "metric",
-      keyboardOpened: false
+      unit: "metric", /* safe user info */
+      keyboardOpened: false,
+      profileImage: null /* safe user info */
     }
 
     if (Platform.OS === "android") {
@@ -97,7 +108,7 @@ export default class RegisterScreen extends Component {
     return /^\d+\.?\d+$/g.test(text);
   }
 
-  handleRegister = () => {
+  handleRegister = async () => {
     if (this.state.nameText === "") {
       this.setState({ nameError: true }, () => {
         this.triggerError("Please fill in the name field.");
@@ -160,46 +171,99 @@ export default class RegisterScreen extends Component {
     }
     this.setState({ loading: true }, () => {
       auth().createUserWithEmailAndPassword(this.state.emailText, this.state.passText).then(userCredential => {
-        firestore().collection("users").add({
-          uid: userCredential.user.uid,
-          name: this.state.nameText,
-          email: this.state.emailText,
-          bio: this.state.bioText,
-          weight: Number(this.state.weightText),
-          height: Number(this.state.heightText),
-          profileImage: this.state.profileImage || null
-        }).then(() => {
-          this.setState({ loading: false });
-          this.props.navigation.navigate("App");
-          ToastAndroid.show("Successfully registered", ToastAndroid.SHORT);
-        }).catch(err => {
-          switch(err.code) {
-            case "auth/user-not-found":
-              this.triggerDialog("No user corresponds to those credentials.");
-              break;
-            case "auth/unknown":
-              this.triggerDialog("Network error. Please try again.");
-              break;
-            default:
-              this.triggerDialog("An unhandled error has occured: line186 \n" + err.message);
-          }
-          this.setState({ loading: false });
-        });
+        let date = new Date();
+        let year = date.getFullYear().toString().substr(-2);
+        let month = (date.getMonth() + 1) < 10 ? "0" + (date.getMonth() + 1) : (date.getMonth() + 1);
+        let day = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
+        let formattedDate = day + "-" + month + "-" + year;
+        if (this.state.profileImage !== null) {
+          let ref = storage().ref("profileImages/").child(userCredential.user.uid);
+          let ext = this.state.profileImage.path.split(".")[1];
+          ref.putFile(this.state.profileImage.path, { contentType: `image/${ext}` }).then(item => {
+            ref.getDownloadURL().then(url => {
+              this.setState({ profileImage: url }, () => {
+                dbUpload();
+              });
+            }).catch(err => {
+              switch(err.code) {
+                case "auth/unknown":
+                  ToastAndroid.show("Network error while uploading image.", ToastAndroid.LONG);
+                  break;
+                default:
+                  ToastAndroid.show("An unhandled error while uploading image has occured: \n" + err.message, ToastAndroid.LONG);
+              }
+              this.setState({ profileImage: null }, () => {
+                dbUpload();
+              });
+            })
+          }).catch(err => {
+            switch(err.code) {
+              case "auth/unknown":
+                ToastAndroid.show("Network error while uploading image.", ToastAndroid.LONG);
+                break;
+              default:
+                ToastAndroid.show("An unhandled error while uploading image has occured: \n" + err.message, ToastAndroid.LONG);
+            }
+            this.setState({ profileImage: null }, () => {
+              dbUpload();
+            });
+          });
+        }
+        let dbUpload = () => {
+          firestore().collection("users").doc(userCredential.user.uid).set({
+            uid: userCredential.user.uid,
+            name: this.state.nameText,
+            email: this.state.emailText,
+            bio: this.state.bioText,
+            weight: Number(this.state.weightText),
+            height: Number(this.state.heightText),
+            profileImage: this.state.profileImage || null,
+            joined: formattedDate,
+            admin: 0
+          }).then(() => {
+            this.setState({ loading: false });
+            this.props.navigation.navigate("App");
+          }).catch(err => {
+            switch(err.code) {
+              case "auth/unknown":
+                this.triggerDialog("Network error. Please try again.");
+                break;
+              default:
+                this.triggerDialog("An unhandled error has occured: \n" + err.message);
+            }
+            this.setState({ loading: false });
+          });
+        }
       }).catch(err => {
         switch(err.code) {
-          case "auth/user-not-found":
-            this.triggerDialog("No user corresponds to those credentials.");
-            break;
           case "auth/unknown":
             this.triggerDialog("Network error. Please try again.");
             break;
           default:
-            this.triggerDialog("An unhandled error has occured: asdasd \n" + err.message);
+            this.triggerDialog("An unhandled error has occured: \n" + err.message);
         }
         this.setState({ loading: false })
       });
     });
   }
+
+  requestStoragePermission = () => new Promise(async (resolve, reject) => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          title: "Sportsmart requires your storage permission",
+          message:
+            "Sportsmart needs access to your storage " +
+            "in order to set your profile image.",
+          buttonPositive: "OK",
+        },
+      );
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
 
   render() {
     return (
@@ -213,9 +277,25 @@ export default class RegisterScreen extends Component {
           </Dialog>
         </Portal>
         <View style={{ display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center", marginHorizontal: 15 }}>
-          <View style={{ width: 150, height: 150,  display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <TouchableOpacity>
-              <Icon name="add-a-photo" size={125} color={colors.dark} />
+          <View style={{ width: 150, height: 150, marginRight: 10, display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <TouchableOpacity onPress={() => {
+              this.requestStoragePermission().then(() => {
+                ImagePicker.showImagePicker(options, (response) => {
+                  if (!response.didCancel && !response.error) {
+                    this.setState({ profileImage: response });
+                  }
+                });
+              });
+            }}>
+              {this.state.profileImage === null ? (
+                <Icon name="add-a-photo" size={125} color={colors.dark} />
+              ) : (
+                <Image
+                  source={{ uri: this.state.profileImage.uri }}
+                  style={{ width: 125, height: 125 }}
+                  containerStyle={{ overflow: "hidden", borderRadius: 125/2, elevation: 1 }}
+                />
+              )}
             </TouchableOpacity>
           </View>
           <View style={{ flex: 1, display: "flex", justifyContent: "center" }}>
@@ -317,8 +397,10 @@ export default class RegisterScreen extends Component {
                   }
                 }}
               />
-              <Text style={{ position: "absolute", left: 120, top: 26, color: colors.dark }}>{this.state.unit === "metric" ? "M" : "FT"}</Text>
-              <Icon color={colors.dark} containerStyle={{ position: "absolute", left: 137, top: 20 }} type="material-community" name="human" size={26} />
+              <View style={{ position: "absolute", right: 5, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ color: colors.dark }}>{this.state.unit === "metric" ? "M" : "FT"}</Text>
+                <Icon color={colors.dark} containerStyle={{ top: -2 }} type="material-community" name="human" size={26} />
+              </View>
             </View>
             <View style={{ flex: 1, marginHorizontal: 15 }}>     
               <TextInput
@@ -337,8 +419,10 @@ export default class RegisterScreen extends Component {
                   }
                 }}
               />
-              <Text style={{ position: "absolute", left: 115, top: 26, color: colors.dark }}>{this.state.unit === "metric" ? "KG" : "LB"}</Text>
-              <Icon color={colors.dark} containerStyle={{ position: "absolute", left: 137, top: 20 }} type="material-community" name={"weight-" + (this.state.unit === "metric" ? "kilogram" : "pound")} size={26} />
+              <View style={{ position: "absolute", right: 5, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ color: colors.dark }}>{this.state.unit === "metric" ? "KG" : "LB"}</Text>
+                <Icon color={colors.dark} containerStyle={{ top: -4 }} type="material-community" name={"weight-" + (this.state.unit === "metric" ? "kilogram" : "pound")} size={26} />
+              </View>
             </View>
           </View>
         </View>

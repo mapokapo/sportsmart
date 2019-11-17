@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">sportsmart</string>
+    <string name="facebook_app_id">2528483297199231</string>
+    <string name="fb_login_protocol_scheme">fb2528483297199231</string>
 </resources>

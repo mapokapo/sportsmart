@@ -90,7 +90,6 @@ export default class RunningScreen extends Component {
     this.requestLocationPermission().then(() => {
       this.watchID = Geolocation.watchPosition(
         position => {
-          
           const newCoordinate = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
@@ -151,7 +150,7 @@ export default class RunningScreen extends Component {
             </View>
           </View>
         )}
-        <View style={{ flexGrow: 1, backgroundColor: colors.dark, height: screenHeight - 544.5 }}>
+        <View style={{ flexGrow: 1, backgroundColor: colors.dark, height: screenHeight - 500 }}>
           <Text style={{ color: colors.light }}>Content goes here</Text>
         </View>
       </ScrollView>

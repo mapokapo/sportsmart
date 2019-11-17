@@ -2,7 +2,9 @@ import React, { Component } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Image, Platform } from "react-native";
 import { Button, SocialIcon } from "react-native-elements";
 import { TextInput, Portal, Dialog } from "react-native-paper";
-import { firebase } from "@react-native-firebase/auth";
+import auth from "@react-native-firebase/auth";
+import { LoginManager, AccessToken } from "react-native-fbsdk";
+import { GoogleSignin, statusCodes } from "@react-native-community/google-signin";
 
 export default class LoginScreen extends Component {
   constructor(props) {
@@ -37,6 +39,12 @@ export default class LoginScreen extends Component {
   componentDidMount = () => {
     Keyboard.addListener("keyboardDidShow", this._keyboardShown);
     Keyboard.addListener("keyboardDidHide", this._keyboardHidden);
+    GoogleSignin.configure({
+      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+      webClientId: '373206170368-f0c8r8ee484f55hari9gp0q8cjcdl8md.apps.googleusercontent.com',
+      offlineAccess: true,
+      forceConsentPrompt: true
+    });
   }
   
   componentWillUnmount = () => {
@@ -91,7 +99,7 @@ export default class LoginScreen extends Component {
       return;
     }
     this.setState({ loading: true }, () => {
-      firebase.auth().signInWithEmailAndPassword(this.state.emailText, this.state.passText).then(() => {
+      auth().signInWithEmailAndPassword(this.state.emailText, this.state.passText).then(() => {
         this.setState({ loading: false });
         this.props.navigation.navigate("App");
       }).catch(err => {
@@ -128,11 +136,34 @@ export default class LoginScreen extends Component {
           />
         </View>)}
           <View style={{ flex: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center" }}>
-            <TouchableOpacity>
-              <SocialIcon type="google" raised color={colors.dark} style={{ marginTop: 20, width: this.state.keyboardOpened ? 48 : 32, height: this.state.keyboardOpened ? 48 : 32 }} iconSize={this.state.keyboardOpened ? 24 : 16} />
-            </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              this.setState({ loading: true }, async () => {
+                const result = await LoginManager.logInWithPermissions(["public_profile", "email"]);
+                const data = await AccessToken.getCurrentAccessToken();
+                if (result && data) {
+                  const credential = auth.FacebookAuthProvider.credential(data.accessToken);
+                  await auth().signInWithCredential(credential);
+                  this.props.navigation.navigate("App");
+                }
+              });
+            }}>
               <SocialIcon type="facebook" raised color={colors.dark} style={{ marginTop: 20, width: this.state.keyboardOpened ? 48 : 32, height: this.state.keyboardOpened ? 48 : 32 }} iconSize={this.state.keyboardOpened ? 24 : 16} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={async () => {
+              try {
+                await GoogleSignin.hasPlayServices();
+                const userInfo = await GoogleSignin.signIn();
+                console.log(userInfo);
+              } catch (error) {
+                if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                  this.triggerDialog("Fatal Error: cannot sign in. Please update Google Play Services");
+                } else if (error.code === statusCodes.SIGN_IN_CANCELLED || error.code === statusCodes.IN_PROGRESS) {
+                } else {
+                  this.triggerDialog("An unhandled error has occured: \n" + JSON.stringify(error));
+                }
+              }
+            }}>
+              <SocialIcon type="google" raised color={colors.dark} style={{ marginTop: 20, width: this.state.keyboardOpened ? 48 : 32, height: this.state.keyboardOpened ? 48 : 32 }} iconSize={this.state.keyboardOpened ? 24 : 16} />
             </TouchableOpacity>
           </View>
         <View style={{ display: "flex", flex: 3, paddingTop: 15, paddingTop: 15, justifyContent: "center", backgroundColor: colors.light, borderTopRightRadius: this.state.keyboardOpened ? 0 : 25, borderTopLeftRadius: this.state.keyboardOpened ? 0 : 25 }}>
@@ -178,7 +209,7 @@ export default class LoginScreen extends Component {
               }}
             />
             <View style={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row" }}>
-              <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>Don't have an account?</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>Don"t have an account?</Text></TouchableOpacity>
               <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>Forgot your password?</Text></TouchableOpacity>
             </View>
           </View>

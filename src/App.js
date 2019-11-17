@@ -37,6 +37,7 @@ import AppHeader from "./components/AppHeader";
 import DrawerComponent from "./components/DrawerComponent";
 import * as colors from "./media/colors";
 import { Icon } from "react-native-elements";
+import { createBottomTabNavigator } from "react-navigation-tabs";
 
 /* TABNAVIGATOR
   {
@@ -68,7 +69,7 @@ const NotifiersStack = createStackNavigator({
 });
 
 const BottomTabNavigator = createStackNavigator({
-  TabsStack: createMaterialBottomTabNavigator({
+  TabsStack: createBottomTabNavigator({
     Running: {
       screen: RunningScreen,
       navigationOptions: {
@@ -88,12 +89,16 @@ const BottomTabNavigator = createStackNavigator({
       }
     }
   }, {
+    initialRouteName: "Running",
     shifting: true,
-    barStyle: {
-      backgroundColor: colors.dark
-    },
-    activeColor: colors.red,
-    inactiveColor: colors.light
+    tabBarOptions: {
+      activeTintColor: colors.red,
+      inactiveTintColor: colors.light,
+      style: {
+        backgroundColor: colors.dark,
+        elevation: 2
+      }
+    }
   })
 }, {
   defaultNavigationOptions: ({ navigation }) => ({
@@ -111,6 +116,8 @@ const DrawerNavigator = createDrawerNavigator({
   Support: SupportScreen
 }, {
   contentComponent: DrawerComponent
+  ,
+  initialRouteName: "Tabs"
 });
 
 /* Switch 2 */

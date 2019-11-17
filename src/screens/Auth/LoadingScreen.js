@@ -11,7 +11,7 @@ export default class LoadingScreen extends Component {
 
   componentDidMount = () => {
     this.unsub = auth().onAuthStateChanged(user => {
-        this.props.navigation.navigate(user ? "App" : "Auth");
+      this.props.navigation.navigate(user ? "App" : "Auth");
     });
   }
 
