@@ -21,10 +21,6 @@
             "package_name": "com.sportsmart",
             "certificate_hash": "d4cdfa04ecd7213954831f2e2d570f1f81e84038"
           }
-        },
-        {
-          "client_id": "373206170368-hs1ekj9098jipo26au52t7npeqtdosnr.apps.googleusercontent.com",
-          "client_type": 3
         }
       ],
       "api_key": [
@@ -34,12 +30,7 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "373206170368-hs1ekj9098jipo26au52t7npeqtdosnr.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

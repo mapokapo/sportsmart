@@ -189,9 +189,7 @@ export default class RegisterScreen extends Component {
           let ext = this.state.profileImage.path.split(".")[1];
           ref.putFile(this.state.profileImage.path, { contentType: `image/${ext}` }).then(item => {
             ref.getDownloadURL().then(url => {
-              this.setState({ profileImage: url }, () => {
-                dbUpload();
-              });
+              this.setState({ profileImage: url });
             }).catch(err => {
               switch(err.code) {
                 case "auth/unknown":
@@ -200,9 +198,7 @@ export default class RegisterScreen extends Component {
                 default:
                   ToastAndroid.show("An unhandled error while uploading image has occured: \n" + err.message, ToastAndroid.LONG);
               }
-              this.setState({ profileImage: null }, () => {
-                dbUpload();
-              });
+              this.setState({ profileImage: null });
             })
           }).catch(err => {
             switch(err.code) {
@@ -212,36 +208,32 @@ export default class RegisterScreen extends Component {
               default:
                 ToastAndroid.show("An unhandled error while uploading image has occured: \n" + err.message, ToastAndroid.LONG);
             }
-            this.setState({ profileImage: null }, () => {
-              dbUpload();
-            });
+            this.setState({ profileImage: null });
           });
         }
-        let dbUpload = () => {
-          firestore().collection("users").doc(userCredential.user.uid).set({
-            uid: userCredential.user.uid,
-            name: this.state.nameText,
-            email: this.state.emailText,
-            bio: this.state.bioText,
-            weight: Number(this.state.weightText),
-            height: Number(this.state.heightText),
-            profileImage: this.state.profileImage || null,
-            joined: formattedDate,
-            admin: 0
-          }).then(() => {
-            this.setState({ loading: false });
-            this.props.navigation.navigate("App");
-          }).catch(err => {
-            switch(err.code) {
-              case "auth/unknown":
-                this.triggerDialog("Network error. Please try again.");
-                break;
-              default:
-                this.triggerDialog("An unhandled error has occured: \n" + err.message);
-            }
-            this.setState({ loading: false });
-          });
-        }
+        firestore().collection("users").doc(userCredential.user.uid).set({
+          uid: userCredential.user.uid,
+          name: this.state.nameText,
+          email: this.state.emailText,
+          bio: this.state.bioText,
+          weight: Number(this.state.weightText),
+          height: Number(this.state.heightText),
+          profileImage: this.state.profileImage || null,
+          joined: formattedDate,
+          admin: 0
+        }).then(() => {
+          this.setState({ loading: false });
+          this.props.navigation.navigate("App");
+        }).catch(err => {
+          switch(err.code) {
+            case "auth/unknown":
+              this.triggerDialog("Network error. Please try again.");
+              break;
+            default:
+              this.triggerDialog("An unhandled error has occured: \n" + err.message);
+          }
+          this.setState({ loading: false });
+        });
       }).catch(err => {
         switch(err.code) {
           case "auth/unknown":

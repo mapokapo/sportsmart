@@ -1,9 +1,9 @@
 import React, { Component } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Image, Platform } from "react-native";
-import { Button, SocialIcon } from "react-native-elements";
+import { Button } from "react-native-elements";
 import { TextInput, Portal, Dialog } from "react-native-paper";
 import auth from "@react-native-firebase/auth";
-import { LoginManager, AccessToken, LoginButton } from "react-native-fbsdk";
+import { AccessToken, LoginButton } from "react-native-fbsdk";
 
 export default class LoginScreen extends Component {
   constructor(props) {
