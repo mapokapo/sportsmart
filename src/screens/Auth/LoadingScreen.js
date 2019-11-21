@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { View, ActivityIndicator, StatusBar } from "react-native";
-import { NavigationActions } from "react-navigation";
 import * as colors from "../../media/colors";
 import auth from "@react-native-firebase/auth";
 

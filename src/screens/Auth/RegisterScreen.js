@@ -7,6 +7,7 @@ import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
 import CustomPicker from "../../components/CustomPicker";
 import ImagePicker from 'react-native-image-picker';
+import languages from "../../media/languages";
 
 const options = {
   title: "Select Image",
@@ -118,61 +119,61 @@ export default class RegisterScreen extends Component {
   handleRegister = async () => {
     if (this.state.nameText === "") {
       this.setState({ nameError: true }, () => {
-        this.triggerError("Please fill in the name field.");
+        this.triggerError(languages.currentLang.errors.nameEmpty);
       });
       return;
     }
     if (!this.nameCheck(this.state.nameText)) {
       this.setState({ nameError: true }, () => {
-        this.triggerError("Name must not contain special characters.");
+        this.triggerError(languages.currentLang.errors.nameInvalid);
       })
       return;
     }
     if (this.state.passText === "") {
       this.setState({ passError: true }, () => {
-        this.triggerError("Please fill in the password field.");
+        this.triggerError(languages.currentLang.errors.passEmpty);
       });
       return;
     }
     if (!this.passCheck(this.state.passText)) {
       this.setState({ passError: true }, () => {
-        this.triggerError("Password must have at least 1 number, 1 symbol, and 8 letters.");
+        this.triggerError(languages.currentLang.errors.passInvalid);
       })
       return;
     }
     if (this.state.emailText === "") {
       this.setState({ emailError: true }, () => {
-        this.triggerError("Please fill in the email field.");
+        this.triggerError(languages.currentLang.errors.emailEmpty);
       })
       return;
     }
     if (!this.emailCheck(this.state.emailText)) {
       this.setState({ emailError: true }, () => {
-        this.triggerError("Invalid email. Please try again.");
+        this.triggerError(languages.currentLang.errors.emailInvalid);
       })
       return;
     }
     if (this.state.heightText === "") {
       this.setState({ heightError: true }, () => {
-        this.triggerError("Please fill in the height field.");
+        this.triggerError(languages.currentLang.errors.heightEmpty);
       })
       return;
     }
     if (!this.heightCheck(this.state.heightText)) {
       this.setState({ heightError: true }, () => {
-        this.triggerError("Invalid height. Please try again (commas not allowed)");
+        this.triggerError(languages.currentLang.errors.heightInvalid);
       })
       return;
     }
     if (this.state.weightText === "") {
       this.setState({ weightError: true }, () => {
-        this.triggerError("Please fill in the weight field.");
+        this.triggerError(languages.currentLang.errors.weightEmpty);
       })
       return;
     }
     if (!this.weightCheck(this.state.weightText)) {
       this.setState({ weightError: true }, () => {
-        this.triggerError("Invalid weight. Please try again (commas not allowed)");
+        this.triggerError(languages.currentLang.errors.weightInvalid);
       })
       return;
     }
@@ -193,20 +194,20 @@ export default class RegisterScreen extends Component {
             }).catch(err => {
               switch(err.code) {
                 case "auth/unknown":
-                  ToastAndroid.show("Network error while uploading image.", ToastAndroid.LONG);
+                  ToastAndroid.show(languages.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
                   break;
                 default:
-                  ToastAndroid.show("An unhandled error while uploading image has occured: \n" + err.message, ToastAndroid.LONG);
+                  ToastAndroid.show(languages.currentLang.errors.imageUnhandledError + err.message, ToastAndroid.LONG);
               }
               this.setState({ profileImage: null });
             })
           }).catch(err => {
             switch(err.code) {
               case "auth/unknown":
-                ToastAndroid.show("Network error while uploading image.", ToastAndroid.LONG);
+                ToastAndroid.show(languages.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
                 break;
               default:
-                ToastAndroid.show("An unhandled error while uploading image has occured: \n" + err.message, ToastAndroid.LONG);
+                ToastAndroid.show(languages.currentLang.errors.imageNetworkError + err.message, ToastAndroid.LONG);
             }
             this.setState({ profileImage: null });
           });
@@ -220,27 +221,28 @@ export default class RegisterScreen extends Component {
           height: Number(this.state.heightText),
           profileImage: this.state.profileImage || null,
           joined: formattedDate,
-          admin: 0
+          admin: 0,
+          unit: this.state.unit
         }).then(() => {
           this.setState({ loading: false });
           this.props.navigation.navigate("App");
         }).catch(err => {
           switch(err.code) {
             case "auth/unknown":
-              this.triggerDialog("Network error. Please try again.");
+              this.triggerDialog(languages.currentLang.errors.networkError);
               break;
             default:
-              this.triggerDialog("An unhandled error has occured: \n" + err.message);
+              this.triggerDialog(languages.currentLang.errors.unhandledError + err.message);
           }
           this.setState({ loading: false });
         });
       }).catch(err => {
         switch(err.code) {
           case "auth/unknown":
-            this.triggerDialog("Network error. Please try again.");
+            this.triggerDialog(languages.currentLang.errors.networkError);
             break;
           default:
-            this.triggerDialog("An unhandled error has occured: \n" + err.message);
+            this.triggerDialog(languages.currentLang.errors.unhandledError + err.message);
         }
         this.setState({ loading: false })
       });
@@ -252,10 +254,9 @@ export default class RegisterScreen extends Component {
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
         {
-          title: "Sportsmart requires your storage permission",
+          title: languages.currentLang.labels.storagePermissionTitle,
           message:
-            "Sportsmart needs access to your storage " +
-            "in order to set your profile image.",
+          languages.currentLang.labels.storagePermissionText,
           buttonPositive: "OK",
         },
       );
@@ -306,7 +307,7 @@ export default class RegisterScreen extends Component {
               error={this.state.nameError}
               style={{ marginBottom: 5 }}
               mode="outlined"
-              label="Name"
+              label={languages.currentLang.labels.name}
               value={this.state.nameText}
               onChangeText={text => this.setState({ nameText: text, nameError: false })}
               onFocus={() => this.setState({ nameError: false, keyboardOpened: true, higherInputFocused: true })}
@@ -329,7 +330,7 @@ export default class RegisterScreen extends Component {
               error={this.state.passError}
               style={{ marginBottom: 5 }}
               mode="outlined"
-              label="Password"
+              label={languages.currentLang.labels.password}
               value={this.state.passText}
               onChangeText={text => this.setState({ passText: text, passError: false })}
               onFocus={() => this.setState({ passError: false, keyboardOpened: true, higherInputFocused: true })}
@@ -354,7 +355,7 @@ export default class RegisterScreen extends Component {
             error={this.state.emailError}
             style={{ marginBottom: 5, marginHorizontal: 15 }}
             mode="outlined"
-            label="Email"
+            label={languages.currentLang.labels.email}
             value={this.state.emailText}
             onChangeText={text => this.setState({ emailText: text, emailError: false })}
             onFocus={() => this.setState({ emailError: false, keyboardOpened: true, higherInputFocused: true })}
@@ -375,7 +376,7 @@ export default class RegisterScreen extends Component {
             numberOfLines={5}
             style={{ marginBottom: 5, marginHorizontal: 15 }}
             mode="outlined"
-            label="Bio (optional)"
+            label={languages.currentLang.labels.bio}
             value={this.state.bioText}
             onChangeText={text => this.setState({ bioText: text })}
             onFocus={() => this.setState({ keyboardOpened: true, lowerInputFocused: true })}
@@ -391,7 +392,7 @@ export default class RegisterScreen extends Component {
               }
             }}
           />)}
-          {!this.state.higherInputFocused && (<CustomPicker unit={this.state.unit} menuOnPress={() => this.setState({ unitPickerVisible: true })} visible={this.state.unitPickerVisible} onDismiss={() => this.setState({ unitPickerVisible: false })}>
+          {!this.state.higherInputFocused && languages.currentLang.name === "english" && (<CustomPicker unit={this.state.unit} menuOnPress={() => this.setState({ unitPickerVisible: true })} visible={this.state.unitPickerVisible} onDismiss={() => this.setState({ unitPickerVisible: false })}>
             <Menu.Item title="Metric" onPress={() => {
               this.setState({ unit: "metric", unitPickerVisible: false });
             }} />
@@ -406,9 +407,9 @@ export default class RegisterScreen extends Component {
                 error={this.state.heightError}
                 style={{ marginBottom: 5 }}
                 mode="outlined"
-                label="Height"
+                label={languages.currentLang.labels.height}
                 value={this.state.heightText}
-                onChangeText={text => this.setState({ heightText: text, heightError: false })}
+                onChangeText={text => this.setState({ heightText: text.replace(/,/g, "."), heightError: false })}
                 onFocus={() => this.setState({ heightError: false, keyboardOpened: true, lowerInputFocused: true })}
                 onBlur={() => this.setState({ lowerInputFocused: false })}
                 blurOnSubmit={false}
@@ -433,9 +434,9 @@ export default class RegisterScreen extends Component {
                 error={this.state.weightError}
                 style={{ marginBottom: 5 }}
                 mode="outlined"
-                label="Weight"
+                label={languages.currentLang.labels.weight}
                 value={this.state.weightText}
-                onChangeText={text => this.setState({ weightText: text, weightError: false })}
+                onChangeText={text => this.setState({ weightText: text.replace(/,/g, "."), weightError: false })}
                 onFocus={() => this.setState({ weightError: false, keyboardOpened: true, lowerInputFocused: true })}
                 onBlur={() => this.setState({ lowerInputFocused: false })}
                 blurOnSubmit={false}
@@ -462,7 +463,7 @@ export default class RegisterScreen extends Component {
             containerStyle={{ top: this.state.higherInputFocused ? -30 : 0 }}
             titleStyle={{ color: colors.light }}
             buttonStyle={{ backgroundColor: colors.red }}
-            title="Register"
+            title={languages.currentLang.labels.register}
             type="solid"
             raised
             loading={this.state.loading}

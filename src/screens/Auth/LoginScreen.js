@@ -5,6 +5,7 @@ import { TextInput, Portal, Dialog } from "react-native-paper";
 import auth from "@react-native-firebase/auth";
 import { AccessToken, LoginManager } from "react-native-fbsdk";
 import { GoogleSignin, statusCodes } from "@react-native-community/google-signin";
+import languages from "../../media/languages";
 
 export default class LoginScreen extends Component {
   constructor(props) {
@@ -81,19 +82,19 @@ export default class LoginScreen extends Component {
   handleLogin = () => {
     if (this.state.emailText === "") {
       this.setState({ emailError: true }, () => {
-        this.triggerError("Please fill in the email field.");
+        this.triggerError(languages.currentLang.errors.emailEmpty);
       })
       return;
     }
     if (!this.emailCheck(this.state.emailText)) {
       this.setState({ emailError: true }, () => {
-        this.triggerError("Invalid email. Please try again.");
+        this.triggerError(languages.currentLang.errors.emailInvalid);
       })
       return;
     }
     if (this.state.passText === "") {
       this.setState({ passError: true }, () => {
-        this.triggerError("Please fill in the password field.");
+        this.triggerError(languages.currentLang.errors.passEmpty);
       });
       return;
     }
@@ -104,13 +105,13 @@ export default class LoginScreen extends Component {
       }).catch(err => {
         switch(err.code) {
           case "auth/user-not-found":
-            this.triggerDialog("No user corresponds to those credentials.");
+            this.triggerDialog(languages.currentLang.errors.userNotFound);
             break;
           case "auth/unknown":
-            this.triggerDialog("Network error. Please try again.");
+            this.triggerDialog(languages.currentLang.errors.networkError);
             break;
           default:
-            this.triggerDialog("An unhandled error has occured: \n" + err.message);
+            this.triggerDialog(languages.currentLang.errors.unhandledError + err.message);
         }
         this.setState({ loading: false });
       });
@@ -122,7 +123,7 @@ export default class LoginScreen extends Component {
       <View style={styles.mainWrapper}>
         <Portal>
           <Dialog visible={this.state.dialogText !== null} onDismiss={this.hideDialog}>
-            <Dialog.Title>Error</Dialog.Title>
+            <Dialog.Title>{languages.currentLang.labels.error}</Dialog.Title>
             <Dialog.Content>
               <Text>{this.state.dialogText}</Text>
             </Dialog.Content>
@@ -159,10 +160,10 @@ export default class LoginScreen extends Component {
                   this.props.navigation.navigate("App");
                 } catch (error) {
                   if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                    this.triggerDialog("Fatal Error: cannot sign in. Please update Google Play Services");
+                    this.triggerDialog(languages.currentLang.errors.googlePlayServicesMissing);
                   } else if (error.code === statusCodes.SIGN_IN_CANCELLED || error.code === statusCodes.IN_PROGRESS) {
                   } else {
-                    this.triggerDialog("An unhandled error has occured: \n" + JSON.stringify(error));
+                    this.triggerDialog(languages.currentLang.errors.unhandledError + JSON.stringify(error));
                   }
                 }
                 this.setState({ loading: false });
@@ -179,7 +180,7 @@ export default class LoginScreen extends Component {
               error={this.state.emailError}
               style={{ marginBottom: 5 }}
               mode="outlined"
-              label="Email"
+              label={languages.currentLang.labels.email}
               value={this.state.emailText}
               onChangeText={text => this.setState({ emailText: text, emailError: false })}
               onFocus={() => this.setState({ emailError: false, keyboardOpened: true }, () => {
@@ -200,7 +201,7 @@ export default class LoginScreen extends Component {
               error={this.state.passError}
               style={styles.textInput}
               mode="outlined"
-              label="Password"
+              label={languages.currentLang.labels.password}
               value={this.state.passText}
               onChangeText={text => this.setState({ passText: text, passError: false })}
               onFocus={() => this.setState({ passError: false, keyboardOpened: true }, () => {
@@ -214,8 +215,8 @@ export default class LoginScreen extends Component {
               }}
             />
             <View style={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row" }}>
-              <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>Don"t have an account?</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>Forgot your password?</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{languages.currentLang.labels.registerText}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{languages.currentLang.labels.registerText}</Text></TouchableOpacity>
             </View>
           </View>
           {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
@@ -224,7 +225,7 @@ export default class LoginScreen extends Component {
               titleStyle={{ color: colors.light }}
               buttonStyle={{ backgroundColor: colors.red }}
               containerStyle={{ marginTop: "auto", marginBottom: "auto" }}
-              title="Login"
+              title={languages.currentLang.labels.login}
               type="solid"
               raised
               loading={this.state.loading}

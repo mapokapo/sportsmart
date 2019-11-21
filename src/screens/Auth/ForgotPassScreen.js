@@ -4,6 +4,7 @@ import * as colors from "../../media/colors";
 import { TextInput } from "react-native-paper";
 import { Button } from "react-native-elements";
 import auth from "@react-native-firebase/auth";
+import languages from "../../media/languages";
 
 export default class ForgotPassScreen extends Component {
   constructor(props) {
@@ -39,24 +40,24 @@ export default class ForgotPassScreen extends Component {
   handleResetPass = () => {
     if (this.state.emailText === "") {
       this.setState({ emailError: true }, () => {
-        this.triggerError("Please fill in the email field.");
+        this.triggerError(languages.currentLang.errors.emailEmpty);
       });
       return;
     }
     if (!this.emailCheck(this.state.emailText)) {
       this.setState({ emailError: true }, () => {
-        this.triggerError("Invalid Email.");
+        this.triggerError(languages.currentLang.errors.emailInvalid);
       })
       return;
     }
     auth().fetchSignInMethodsForEmail(this.state.emailText).then(methods => {
       if (methods.length === 0) {
         this.setState({ emailError: true }, () => {
-          this.triggerError("The specified user does not exist.");
+          this.triggerError(languages.currentLang.errors.userNotFound);
         });
       } else if (methods.indexOf("password") === -1) {
         this.setState({ emailError: true }, () => {
-          this.triggerError("Error: unable to reset password. Facebook users can not reset their password with Sportsmart.", 5);
+          this.triggerError(languages.currentLang.errors.facebookResetPassError, 5);
         });
       } else {
         auth().sendPasswordResetEmail(this.state.emailText);
@@ -67,14 +68,14 @@ export default class ForgotPassScreen extends Component {
   render() {
     return (
       <View style={styles.mainWrapper}>
-        <Text style={{ color: colors.dark, fontSize: 18 }}>Please enter your registered Email to reset your password.</Text>
+        <Text style={{ color: colors.dark, fontSize: 18 }}>{languages.currentLang.labels.resetPassScreenText}</Text>
         <TextInput
           keyboardType="email-address"
           textContentType="emailAddress"
           error={this.state.emailError}
           style={{ marginTop: 5 }}
           mode="flat"
-          label="Email"
+          label={languages.currentLang.labels.email}
           value={this.state.emailText}
           onChangeText={text => this.setState({ emailText: text, emailError: false })}
           onFocus={() => this.setState({ emailError: false, keyboardOpened: true })}
@@ -90,7 +91,7 @@ export default class ForgotPassScreen extends Component {
           containerStyle={{ marginTop: "auto" }}
           titleStyle={{ color: colors.light }}
           buttonStyle={{ backgroundColor: colors.dark }}
-          title="Reset Password"
+          title={languages.currentLang.labels.resetPass}
           type="solid"
           raised
           loading={this.state.loading}

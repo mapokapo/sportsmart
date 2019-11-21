@@ -6,6 +6,7 @@ import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import * as colors from "../media/colors";
 import { GraphRequest, GraphRequestManager, AccessToken } from "react-native-fbsdk";
+import languages from "../media/languages";
 
 export default class DrawerComponent extends Component {
   constructor(props) {
@@ -90,7 +91,7 @@ export default class DrawerComponent extends Component {
           return (
             <Drawer.Item
               key={index}
-              label={item}
+              label={languages.currentLang.labels[item.toLowerCase()]}
               onPress={() => {
                 this.props.navigation.navigate(item);
               }}
