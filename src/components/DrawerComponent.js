@@ -53,7 +53,7 @@ export default class DrawerComponent extends Component {
 
             new GraphRequestManager().addRequest(infoRequest).start();
           } else if (user.providerData[0].providerId === "google.com") {
-            /* TODO */
+            this.setState({ user: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
           } else if (!doc.exists) {
             return;
           } else {

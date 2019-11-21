@@ -183,6 +183,7 @@ android {
 }
 
 dependencies {
+    implementation project(':@react-native-community_google-signin')
     implementation project(':react-native-geolocation-service')
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.facebook.react:react-native:+"  // From node_modules
@@ -198,6 +199,7 @@ dependencies {
     implementation 'com.facebook.fresco:animated-gif:1.12.0'
     implementation 'com.facebook.fresco:animated-webp:1.10.0'
     implementation 'com.facebook.fresco:webpsupport:1.10.0'
+    implementation 'com.google.android.gms:play-services-auth:17.0.0'
 
     if (enableHermes) {
         def hermesPath = "../../node_modules/hermes-engine/android/";

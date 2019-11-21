@@ -15,12 +15,16 @@
       },
       "oauth_client": [
         {
-          "client_id": "373206170368-ujnmfetcs94j46knjua1obb840c14pli.apps.googleusercontent.com",
+          "client_id": "373206170368-vprikdvlmml7qd85s5m83kmn5nodl69i.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.sportsmart",
-            "certificate_hash": "d4cdfa04ecd7213954831f2e2d570f1f81e84038"
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
           }
+        },
+        {
+          "client_id": "373206170368-e8jrbu94tgslrel2h8ar0835pkc2jl37.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [
@@ -30,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "373206170368-e8jrbu94tgslrel2h8ar0835pkc2jl37.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
