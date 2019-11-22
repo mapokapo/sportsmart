@@ -1,6 +1,7 @@
 # sportsmart
 A modern fitness App
-*The smart way to be active*
+
+~*The smart way to be active*
 
 # Info about this project:
 - Made with React Native in Android
