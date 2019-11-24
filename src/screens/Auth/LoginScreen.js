@@ -1,11 +1,13 @@
 import React, { Component } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Image, Platform } from "react-native";
-import { Button, SocialIcon } from "react-native-elements";
-import { TextInput, Portal, Dialog } from "react-native-paper";
+import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Image, Platform, Dimensions, AsyncStorage } from "react-native";
+import { Button, SocialIcon, Icon } from "react-native-elements";
+import { TextInput, Portal, Dialog, Menu, Divider, IconButton } from "react-native-paper";
 import auth from "@react-native-firebase/auth";
 import { AccessToken, LoginManager } from "react-native-fbsdk";
 import { GoogleSignin, statusCodes } from "@react-native-community/google-signin";
 import languages from "../../media/languages";
+
+const screenWidth = Math.round(Dimensions.get("window").width);
 
 export default class LoginScreen extends Component {
   constructor(props) {
@@ -19,12 +21,18 @@ export default class LoginScreen extends Component {
       dialogText: null,
       currentTimeout: null,
       emailError: false,
-      passError: false
+      passError: false,
+      visible: false,
+      language: languages.currentLang
     }
 
     if (Platform.OS === "android") {
       UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
     }
+  }
+
+  capitalize = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
   _keyboardShown = () => {
@@ -82,19 +90,19 @@ export default class LoginScreen extends Component {
   handleLogin = () => {
     if (this.state.emailText === "") {
       this.setState({ emailError: true }, () => {
-        this.triggerError(languages.currentLang.errors.emailEmpty);
+        this.triggerError(this.state.language.errors.emailEmpty);
       })
       return;
     }
     if (!this.emailCheck(this.state.emailText)) {
       this.setState({ emailError: true }, () => {
-        this.triggerError(languages.currentLang.errors.emailInvalid);
+        this.triggerError(this.state.language.errors.emailInvalid);
       })
       return;
     }
     if (this.state.passText === "") {
       this.setState({ passError: true }, () => {
-        this.triggerError(languages.currentLang.errors.passEmpty);
+        this.triggerError(this.state.language.errors.passEmpty);
       });
       return;
     }
@@ -105,13 +113,13 @@ export default class LoginScreen extends Component {
       }).catch(err => {
         switch(err.code) {
           case "auth/user-not-found":
-            this.triggerDialog(languages.currentLang.errors.userNotFound);
+            this.triggerDialog(this.state.language.errors.userNotFound);
             break;
           case "auth/unknown":
-            this.triggerDialog(languages.currentLang.errors.networkError);
+            this.triggerDialog(this.state.language.errors.networkError);
             break;
           default:
-            this.triggerDialog(languages.currentLang.errors.unhandledError + err.message);
+            this.triggerDialog(this.state.language.errors.unhandledError + err.message);
         }
         this.setState({ loading: false });
       });
@@ -123,12 +131,42 @@ export default class LoginScreen extends Component {
       <View style={styles.mainWrapper}>
         <Portal>
           <Dialog visible={this.state.dialogText !== null} onDismiss={this.hideDialog}>
-            <Dialog.Title>{languages.currentLang.labels.error}</Dialog.Title>
+            <Dialog.Title>{this.state.language.labels.error}</Dialog.Title>
             <Dialog.Content>
               <Text>{this.state.dialogText}</Text>
             </Dialog.Content>
           </Dialog>
         </Portal>
+        <Menu
+          theme={{
+            colors: {
+              primary: colors.dark, placeholder: colors.dark, text: colors.dark,
+              background: colors.light, backdrop: colors.dark
+            }
+          }}
+          style={{ left: 38, top: 38 }}
+          visible={this.state.visible}
+          onDismiss={() => this.setState({ visible: false })}
+          anchor={
+            <IconButton
+              icon="translate"
+              color={colors.light}
+              size={30}
+              style={{ top: 10, left: 10 }}
+              onPress={() => this.setState({ visible: true })}
+            />
+          }
+        >
+          {languages.options.map(language => (
+            <View key={language.name}><Menu.Item style={{ paddingVertical: 2 }} title={this.capitalize(language.name)} onPress={() => {
+              AsyncStorage.setItem("sportsmartLanguage", JSON.stringify(language)).then(() => {
+                languages.currentLang = language;
+                this.setState({ language, visible: false });
+              });
+            }} />
+            {languages.options.indexOf(language) !== languages.options.length-1 && <Divider />}</View>
+          ))}
+        </Menu>
         {!this.state.keyboardOpened && (<View style={{ marginHorizontal: 15, flex: 4, justifyContent: "center", alignItems: "center" }}>
           <Image
             source={require("../../media/sportsmart_icons/logo.png")}
@@ -160,10 +198,10 @@ export default class LoginScreen extends Component {
                   this.props.navigation.navigate("App");
                 } catch (error) {
                   if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                    this.triggerDialog(languages.currentLang.errors.googlePlayServicesMissing);
+                    this.triggerDialog(this.state.language.errors.googlePlayServicesMissing);
                   } else if (error.code === statusCodes.SIGN_IN_CANCELLED || error.code === statusCodes.IN_PROGRESS) {
                   } else {
-                    this.triggerDialog(languages.currentLang.errors.unhandledError + JSON.stringify(error));
+                    this.triggerDialog(this.state.language.errors.unhandledError + JSON.stringify(error));
                   }
                 }
                 this.setState({ loading: false });
@@ -180,7 +218,7 @@ export default class LoginScreen extends Component {
               error={this.state.emailError}
               style={{ marginBottom: 5 }}
               mode="outlined"
-              label={languages.currentLang.labels.email}
+              label={this.state.language.labels.email}
               value={this.state.emailText}
               onChangeText={text => this.setState({ emailText: text, emailError: false })}
               onFocus={() => this.setState({ emailError: false, keyboardOpened: true }, () => {
@@ -201,7 +239,7 @@ export default class LoginScreen extends Component {
               error={this.state.passError}
               style={styles.textInput}
               mode="outlined"
-              label={languages.currentLang.labels.password}
+              label={this.state.language.labels.password}
               value={this.state.passText}
               onChangeText={text => this.setState({ passText: text, passError: false })}
               onFocus={() => this.setState({ passError: false, keyboardOpened: true }, () => {
@@ -215,8 +253,8 @@ export default class LoginScreen extends Component {
               }}
             />
             <View style={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row" }}>
-              <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{languages.currentLang.labels.registerText}</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{languages.currentLang.labels.registerText}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.state.language.labels.registerText}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.state.language.labels.resetPass}</Text></TouchableOpacity>
             </View>
           </View>
           {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
@@ -225,7 +263,7 @@ export default class LoginScreen extends Component {
               titleStyle={{ color: colors.light }}
               buttonStyle={{ backgroundColor: colors.red }}
               containerStyle={{ marginTop: "auto", marginBottom: "auto" }}
-              title={languages.currentLang.labels.login}
+              title={this.state.language.labels.login}
               type="solid"
               raised
               loading={this.state.loading}

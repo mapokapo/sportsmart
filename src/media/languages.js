@@ -1,5 +1,3 @@
-import { AsyncStorage } from "react-native";
-
 let options = [
   {
     name: "english",
@@ -21,7 +19,8 @@ let options = [
       googlePlayServicesMissing: "Fatal Error: cannot sign in. Please update Google Play Services",
       imageNetworkError: "Network error while uploading image.",
       imageUnhandledError: "An unhandled error while uploading image has occured: \n\n",
-      facebookResetPassError: "Error: unable to reset password. Facebook users can not reset their password with Sportsmart."
+      facebookResetPassError: "Error: unable to reset password. Facebook users can not reset their password with Sportsmart.",
+      ageEmpty: "Please fill in the birth date field."
     },
     labels: {
       error: "Error",
@@ -51,7 +50,8 @@ let options = [
       login: "Login",
       register: "Register",
       resetPass: "Reset Password",
-      signOut: "Sign Out"
+      signOut: "Sign Out",
+      born: "Birth date"
     }
   },
   {
@@ -74,7 +74,8 @@ let options = [
       googlePlayServicesMissing: "Pogreška u prijavi. Molimo vas ažurirajte Google Play Services",
       imageNetworkError: "Pogreška sa mrežom tijekom učitavanje slike.",
       imageUnhandledError: "Nepoznata pogreška tijekom učitavanje slike: \n\n",
-      facebookResetPassError: "Pogreška u mijenjanju lozinke: Facebook korisnici ne mogu promijeniti lozinku pomoću Sportsmarta"
+      facebookResetPassError: "Pogreška u mijenjanju lozinke: Facebook korisnici ne mogu promijeniti lozinku pomoću Sportsmarta",
+      ageEmpty: "Molimo vas da ispunite polje za datum rođenja"
     },
     labels: {
       error: "Greška",
@@ -102,7 +103,8 @@ let options = [
       login: "Prijava",
       register: "Registriraj se",
       resetPass: "Promjeni lozinku",
-      signOut: "Odjavi se"
+      signOut: "Odjavi se",
+      born: "Datum rođenja"
     }
   }
 ];

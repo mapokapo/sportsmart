@@ -1,13 +1,13 @@
 import React, { Component } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Platform, PermissionsAndroid, ToastAndroid } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Platform, PermissionsAndroid, ToastAndroid, Picker } from "react-native";
 import { Button, Icon, Image } from "react-native-elements";
-import { TextInput, Menu, Portal, Dialog } from "react-native-paper";
+import { TextInput, Portal, Dialog } from "react-native-paper";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
-import CustomPicker from "../../components/CustomPicker";
 import ImagePicker from 'react-native-image-picker';
 import languages from "../../media/languages";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const options = {
   title: "Select Image",
@@ -27,11 +27,13 @@ export default class RegisterScreen extends Component {
       weightText: "", /* safe user info */
       heightText: "", /* safe user info */
       bioText: "", /* safe user info */
+      bornText: new Date(null),
       nameError: false,
       emailError: false,
       passError: false,
       weightError: false,
       heightError: false,
+      bornError: false,
       loading: false,
       currentError: null,
       keyboardOpened: false,
@@ -41,7 +43,8 @@ export default class RegisterScreen extends Component {
       keyboardOpened: false,
       profileImage: null /* safe user info */,
       lowerInputFocused: false,
-      higherInputFocused: false
+      higherInputFocused: false,
+      gender: "male"
     }
 
     if (Platform.OS === "android") {
@@ -116,6 +119,10 @@ export default class RegisterScreen extends Component {
     return /^\d+\.?\d+$/g.test(text);
   }
 
+  ageCheck = (born) => {
+    return born.getTime() !== 0;
+  }
+
   handleRegister = async () => {
     if (this.state.nameText === "") {
       this.setState({ nameError: true }, () => {
@@ -177,6 +184,12 @@ export default class RegisterScreen extends Component {
       })
       return;
     }
+    if (!this.ageCheck(this.state.bornText)) {
+      this.setState({ bornError: true }, () => {
+        this.triggerError(languages.currentLang.errors.ageEmpty);
+      })
+      return;
+    }
     Keyboard.dismiss();
     this.setState({ loading: true }, () => {
       auth().createUserWithEmailAndPassword(this.state.emailText, this.state.passText).then(userCredential => {
@@ -185,12 +198,40 @@ export default class RegisterScreen extends Component {
         let month = (date.getMonth() + 1) < 10 ? "0" + (date.getMonth() + 1) : (date.getMonth() + 1);
         let day = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
         let formattedDate = day + "-" + month + "-" + year;
+        let dbUpload = async () => {
+          firestore().collection("users").doc(userCredential.user.uid).set({
+            uid: userCredential.user.uid,
+            name: this.state.nameText,
+            email: this.state.emailText,
+            bio: this.state.bioText,
+            weight: Number(this.state.weightText),
+            height: Number(this.state.heightText),
+            profileImage: this.state.profileImage || null,
+            joined: formattedDate,
+            admin: 0,
+            unit: this.state.unit,
+            born: this.state.bornText,
+            gender: this.state.gender
+          }).then(() => {
+            this.setState({ loading: false });
+            this.props.navigation.navigate("App");
+          }).catch(err => {
+            switch(err.code) {
+              case "auth/unknown":
+                this.triggerDialog(languages.currentLang.errors.networkError);
+                break;
+              default:
+                this.triggerDialog(languages.currentLang.errors.unhandledError + err.message);
+            }
+            this.setState({ loading: false });
+          });
+        }
         if (this.state.profileImage !== null) {
           let ref = storage().ref("profileImages/").child(userCredential.user.uid);
           let ext = this.state.profileImage.path.split(".")[1];
           ref.putFile(this.state.profileImage.path, { contentType: `image/${ext}` }).then(item => {
             ref.getDownloadURL().then(url => {
-              this.setState({ profileImage: url });
+              this.setState({ profileImage: url }, () => dbUpload());
             }).catch(err => {
               switch(err.code) {
                 case "auth/unknown":
@@ -199,7 +240,7 @@ export default class RegisterScreen extends Component {
                 default:
                   ToastAndroid.show(languages.currentLang.errors.imageUnhandledError + err.message, ToastAndroid.LONG);
               }
-              this.setState({ profileImage: null });
+              this.setState({ profileImage: null }, () => dbUpload());
             })
           }).catch(err => {
             switch(err.code) {
@@ -209,33 +250,9 @@ export default class RegisterScreen extends Component {
               default:
                 ToastAndroid.show(languages.currentLang.errors.imageNetworkError + err.message, ToastAndroid.LONG);
             }
-            this.setState({ profileImage: null });
+            this.setState({ profileImage: null }, () => dbUpload());
           });
         }
-        firestore().collection("users").doc(userCredential.user.uid).set({
-          uid: userCredential.user.uid,
-          name: this.state.nameText,
-          email: this.state.emailText,
-          bio: this.state.bioText,
-          weight: Number(this.state.weightText),
-          height: Number(this.state.heightText),
-          profileImage: this.state.profileImage || null,
-          joined: formattedDate,
-          admin: 0,
-          unit: this.state.unit
-        }).then(() => {
-          this.setState({ loading: false });
-          this.props.navigation.navigate("App");
-        }).catch(err => {
-          switch(err.code) {
-            case "auth/unknown":
-              this.triggerDialog(languages.currentLang.errors.networkError);
-              break;
-            default:
-              this.triggerDialog(languages.currentLang.errors.unhandledError + err.message);
-          }
-          this.setState({ loading: false });
-        });
       }).catch(err => {
         switch(err.code) {
           case "auth/unknown":
@@ -305,7 +322,7 @@ export default class RegisterScreen extends Component {
               autoCapitalize="words"
               textContentType="name"
               error={this.state.nameError}
-              style={{ marginBottom: 5 }}
+              style={{ marginBottom: this.state.keyboardOpened ? 5 : 10 }}
               mode="outlined"
               label={languages.currentLang.labels.name}
               value={this.state.nameText}
@@ -328,7 +345,7 @@ export default class RegisterScreen extends Component {
               secureTextEntry={true}
               autoCorrect={false}
               error={this.state.passError}
-              style={{ marginBottom: 5 }}
+              style={{ marginBottom: this.state.keyboardOpened ? 5 : 10 }}
               mode="outlined"
               label={languages.currentLang.labels.password}
               value={this.state.passText}
@@ -353,7 +370,7 @@ export default class RegisterScreen extends Component {
             autoCapitalize="none"
             textContentType="emailAddress"
             error={this.state.emailError}
-            style={{ marginBottom: 5, marginHorizontal: 15 }}
+            style={{ marginBottom: this.state.keyboardOpened ? 5 : 10, marginHorizontal: 15 }}
             mode="outlined"
             label={languages.currentLang.labels.email}
             value={this.state.emailText}
@@ -373,8 +390,7 @@ export default class RegisterScreen extends Component {
           />)}
           {!this.state.higherInputFocused && (<TextInput
             multiline={true}
-            numberOfLines={5}
-            style={{ marginBottom: 5, marginHorizontal: 15 }}
+            style={{ marginBottom: this.state.keyboardOpened ? 5 : 10, marginHorizontal: 15 }}
             mode="outlined"
             label={languages.currentLang.labels.bio}
             value={this.state.bioText}
@@ -392,16 +408,34 @@ export default class RegisterScreen extends Component {
               }
             }}
           />)}
-          {!this.state.higherInputFocused && languages.currentLang.name === "english" && (<CustomPicker unit={this.state.unit} menuOnPress={() => this.setState({ unitPickerVisible: true })} visible={this.state.unitPickerVisible} onDismiss={() => this.setState({ unitPickerVisible: false })}>
-            <Menu.Item title="Metric" onPress={() => {
-              this.setState({ unit: "metric", unitPickerVisible: false });
-            }} />
-            <Menu.Item title="Imperial" onPress={() => {
-              this.setState({ unit: "imperial", unitPickerVisible: false });
-            }} />
-          </CustomPicker>)}
+            <View style={{ display: "flex", flexDirection: "row" }}>
+              {!this.state.higherInputFocused && languages.currentLang.name === "english" && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 5, marginLeft: 15, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
+                <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>Unit</Text>
+                <Picker
+                  mode="dropdown"
+                  selectedValue={this.state.unit}
+                  onValueChange={(itemValue) => {
+                    this.setState({ unit: itemValue });
+                  }}>
+                  <Picker.Item label="Metric" value="metric" />
+                  <Picker.Item label="Imperial" value="imperial" />
+                </Picker>
+              </View>)}
+              <View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 15, marginLeft: languages.currentLang.name !== "english" ? 15 : 5, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
+                <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>Gender</Text>
+                <Picker
+                  mode="dropdown"
+                  selectedValue={this.state.gender}
+                  onValueChange={(itemValue) => {
+                    this.setState({ gender: itemValue });
+                  }}>
+                  <Picker.Item label="Male" value="male" />
+                  <Picker.Item label="Female" value="female" />
+                </Picker>
+              </View>
+            </View>
           {!this.state.higherInputFocused && (<View style={{ display: "flex", flexDirection: "row" }}>
-            <View style={{ flex: 1, marginHorizontal: 15 }}>
+            <View style={{ flex: 9, marginLeft: 15, marginRight: 5 }}>
               <TextInput
                 keyboardType="decimal-pad"
                 error={this.state.heightError}
@@ -423,12 +457,11 @@ export default class RegisterScreen extends Component {
                   }
                 }}
               />
-              <View style={{ position: "absolute", right: 5, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ color: colors.dark }}>{this.state.unit === "metric" ? "M" : "FT"}</Text>
-                <Icon color={colors.dark} containerStyle={{ top: -2 }} type="material-community" name="human" size={26} />
+              <View style={{ position: "absolute", right: 7, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "M" : "FT"}</Text>
               </View>
             </View>
-            <View style={{ flex: 1, marginHorizontal: 15 }}>     
+            <View style={{ flex: 9, marginHorizontal: 5 }}>     
               <TextInput
                 keyboardType="numeric"
                 error={this.state.weightError}
@@ -441,8 +474,7 @@ export default class RegisterScreen extends Component {
                 onBlur={() => this.setState({ lowerInputFocused: false })}
                 blurOnSubmit={false}
                 ref={this.weight}
-                onSubmitEditing={() => this.handleRegister()}
-                returnKeyType="done"
+                returnKeyType="next"
                 theme={{
                   colors: {
                     placeholder: colors.dark, text: colors.dark, primary: colors.dark,
@@ -450,11 +482,19 @@ export default class RegisterScreen extends Component {
                   }
                 }}
               />
-              <View style={{ position: "absolute", right: 5, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ color: colors.dark }}>{this.state.unit === "metric" ? "KG" : "LB"}</Text>
-                <Icon color={colors.dark} containerStyle={{ top: -3 }} type="material-community" name={"weight-" + (this.state.unit === "metric" ? "kilogram" : "pound")} size={26} />
+              <View style={{ position: "absolute", right: 7, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "KG" : "LB"}</Text>
               </View>
             </View>
+            <Button onPress={() => this.setState({ datePickerOpen: true })} titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: "auto", marginBottom: "auto", backgroundColor: "transparent" }} containerStyle={{ display: "flex", flex: 10, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginLeft: 5, marginRight: 15, marginVertical: 5 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString() : languages.currentLang.labels.age} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />
+            {this.state.datePickerOpen && (<DateTimePicker
+              value={this.state.bornText}
+              mode="date"
+              is24Hour={true}
+              display="calendar"
+              onChange={(event, date) => event.type === "dismissed" ? this.setState({ datePickerOpen: false }) : this.setState({ bornText: date, datePickerOpen: false })}
+              onDismiss={() => this.setState({ datePickerOpen: false })}
+            />)}
           </View>)}
         </View>
         {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}

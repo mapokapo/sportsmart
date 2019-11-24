@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { AsyncStorage, Text, LayoutAnimation, UIManager } from "react-native";
+import { AsyncStorage, Text } from "react-native";
 
 import { createAppContainer, createSwitchNavigator } from "react-navigation";
 import { createDrawerNavigator } from "react-navigation-drawer";
@@ -38,13 +38,11 @@ import DrawerComponent from "./components/DrawerComponent";
 import * as colors from "./media/colors";
 import { Icon } from "react-native-elements";
 import languages from "./media/languages";
-AsyncStorage.getItem("sportsmartLanguage").then(result => {
-  if (result) languages.currentLang = JSON.parse(result);
-});
 
-if (Platform.OS === "android") {
-  UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+let language = languages.currentLang;
+AsyncStorage.getItem("sportsmartLanguage").then(result => {
+  if (result) language = JSON.parse(result);
+});
 
 const NotifiersStack = createStackNavigator({
   Notifiers: {
@@ -66,24 +64,21 @@ const BottomTabNavigator = createStackNavigator({
       screen: RunningScreen,
       navigationOptions: () => ({
         tabBarIcon: ({ tintColor }) => (<Icon type="material-community" name="run" color={tintColor} size={24} />),
-        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{languages.currentLang.labels.running}</Text>,
-        tabBarOnPress: ({ defaultHandler }) => { defaultHandler(); LayoutAnimation.configureNext(LayoutAnimation.create(50, LayoutAnimation.Types.linear, LayoutAnimation.Properties.opacity)); }
+        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{language.labels.running}</Text>
       })
     },
     Notifiers: {
       screen: NotifiersStack,
       navigationOptions: () => ({
         tabBarIcon: ({ tintColor }) => (<Icon type="material-community" name="alarm" color={tintColor} size={24} />),
-        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{languages.currentLang.labels.notifiers}</Text>,
-        tabBarOnPress: ({ defaultHandler }) => { defaultHandler(); LayoutAnimation.configureNext(LayoutAnimation.create(50, LayoutAnimation.Types.linear, LayoutAnimation.Properties.opacity)); }
+        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{language.labels.notifiers}</Text>
       })
     },
     Profile: {
       screen: ProfileScreen,
       navigationOptions: () => ({
         tabBarIcon: ({ tintColor }) => (<Icon type="material-community" name="account" color={tintColor} size={24} />),
-        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{languages.currentLang.labels.profile}</Text>,
-        tabBarOnPress: ({ defaultHandler }) => { defaultHandler(); LayoutAnimation.configureNext(LayoutAnimation.create(50, LayoutAnimation.Types.linear, LayoutAnimation.Properties.opacity)); }
+        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{language.labels.profile}</Text>
       })
     }
   }, {
@@ -132,7 +127,7 @@ const AuthStack = createStackNavigator({
       headerStyle: {
         backgroundColor: colors.dark
       },
-      headerTitle: languages.currentLang.labels.register
+      headerTitle: language.labels.register
     })
   },
   ForgotPass: {
@@ -142,7 +137,7 @@ const AuthStack = createStackNavigator({
       headerStyle: {
         backgroundColor: colors.dark
       },
-      headerTitle: languages.currentLang.labels.resetPass
+      headerTitle: language.labels.resetPass
     })
   }
 }, {
