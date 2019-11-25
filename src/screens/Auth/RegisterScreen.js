@@ -6,7 +6,6 @@ import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
 import ImagePicker from 'react-native-image-picker';
-import languages from "../../media/languages";
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const options = {
@@ -44,7 +43,9 @@ export default class RegisterScreen extends Component {
       profileImage: null /* safe user info */,
       lowerInputFocused: false,
       higherInputFocused: false,
-      gender: "male"
+      gender: "male",
+      languages: this.props.screenProps.languages,
+      currentLang: this.props.screenProps.currentLang
     }
 
     if (Platform.OS === "android") {
@@ -126,67 +127,67 @@ export default class RegisterScreen extends Component {
   handleRegister = async () => {
     if (this.state.nameText === "") {
       this.setState({ nameError: true }, () => {
-        this.triggerError(languages.currentLang.errors.nameEmpty);
+        this.triggerError(this.props.screenProps.currentLang.errors.nameEmpty);
       });
       return;
     }
     if (!this.nameCheck(this.state.nameText)) {
       this.setState({ nameError: true }, () => {
-        this.triggerError(languages.currentLang.errors.nameInvalid);
+        this.triggerError(this.props.screenProps.currentLang.errors.nameInvalid);
       })
       return;
     }
     if (this.state.passText === "") {
       this.setState({ passError: true }, () => {
-        this.triggerError(languages.currentLang.errors.passEmpty);
+        this.triggerError(this.props.screenProps.currentLang.errors.passEmpty);
       });
       return;
     }
     if (!this.passCheck(this.state.passText)) {
       this.setState({ passError: true }, () => {
-        this.triggerError(languages.currentLang.errors.passInvalid);
+        this.triggerError(this.props.screenProps.currentLang.errors.passInvalid);
       })
       return;
     }
     if (this.state.emailText === "") {
       this.setState({ emailError: true }, () => {
-        this.triggerError(languages.currentLang.errors.emailEmpty);
+        this.triggerError(this.props.screenProps.currentLang.errors.emailEmpty);
       })
       return;
     }
     if (!this.emailCheck(this.state.emailText)) {
       this.setState({ emailError: true }, () => {
-        this.triggerError(languages.currentLang.errors.emailInvalid);
+        this.triggerError(this.props.screenProps.currentLang.errors.emailInvalid);
       })
       return;
     }
     if (this.state.heightText === "") {
       this.setState({ heightError: true }, () => {
-        this.triggerError(languages.currentLang.errors.heightEmpty);
+        this.triggerError(this.props.screenProps.currentLang.errors.heightEmpty);
       })
       return;
     }
     if (!this.heightCheck(this.state.heightText)) {
       this.setState({ heightError: true }, () => {
-        this.triggerError(languages.currentLang.errors.heightInvalid);
+        this.triggerError(this.props.screenProps.currentLang.errors.heightInvalid);
       })
       return;
     }
     if (this.state.weightText === "") {
       this.setState({ weightError: true }, () => {
-        this.triggerError(languages.currentLang.errors.weightEmpty);
+        this.triggerError(this.props.screenProps.currentLang.errors.weightEmpty);
       })
       return;
     }
     if (!this.weightCheck(this.state.weightText)) {
       this.setState({ weightError: true }, () => {
-        this.triggerError(languages.currentLang.errors.weightInvalid);
+        this.triggerError(this.props.screenProps.currentLang.errors.weightInvalid);
       })
       return;
     }
     if (!this.ageCheck(this.state.bornText)) {
       this.setState({ bornError: true }, () => {
-        this.triggerError(languages.currentLang.errors.ageEmpty);
+        this.triggerError(this.props.screenProps.currentLang.errors.ageEmpty);
       })
       return;
     }
@@ -194,10 +195,6 @@ export default class RegisterScreen extends Component {
     this.setState({ loading: true }, () => {
       auth().createUserWithEmailAndPassword(this.state.emailText, this.state.passText).then(userCredential => {
         let date = new Date();
-        let year = date.getFullYear().toString().substr(-2);
-        let month = (date.getMonth() + 1) < 10 ? "0" + (date.getMonth() + 1) : (date.getMonth() + 1);
-        let day = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
-        let formattedDate = day + "-" + month + "-" + year;
         let dbUpload = async () => {
           firestore().collection("users").doc(userCredential.user.uid).set({
             uid: userCredential.user.uid,
@@ -207,10 +204,10 @@ export default class RegisterScreen extends Component {
             weight: Number(this.state.weightText),
             height: Number(this.state.heightText),
             profileImage: this.state.profileImage || null,
-            joined: formattedDate,
+            joined: date,
             admin: 0,
             unit: this.state.unit,
-            born: this.state.bornText,
+            born: this.state.bornText.toDateString(),
             gender: this.state.gender
           }).then(() => {
             this.setState({ loading: false });
@@ -218,10 +215,10 @@ export default class RegisterScreen extends Component {
           }).catch(err => {
             switch(err.code) {
               case "auth/unknown":
-                this.triggerDialog(languages.currentLang.errors.networkError);
+                this.triggerDialog(this.props.screenProps.currentLang.errors.networkError);
                 break;
               default:
-                this.triggerDialog(languages.currentLang.errors.unhandledError + err.message);
+                this.triggerDialog(this.props.screenProps.currentLang.errors.unhandledError + err.message);
             }
             this.setState({ loading: false });
           });
@@ -235,31 +232,46 @@ export default class RegisterScreen extends Component {
             }).catch(err => {
               switch(err.code) {
                 case "auth/unknown":
-                  ToastAndroid.show(languages.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
+                  ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
                   break;
                 default:
-                  ToastAndroid.show(languages.currentLang.errors.imageUnhandledError + err.message, ToastAndroid.LONG);
+                  ToastAndroid.show(this.props.screenProps.currentLang.errors.imageUnhandledError + err.message, ToastAndroid.LONG);
               }
               this.setState({ profileImage: null }, () => dbUpload());
             })
           }).catch(err => {
             switch(err.code) {
               case "auth/unknown":
-                ToastAndroid.show(languages.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
+                ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
                 break;
               default:
-                ToastAndroid.show(languages.currentLang.errors.imageNetworkError + err.message, ToastAndroid.LONG);
+                ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError + err.message, ToastAndroid.LONG);
             }
             this.setState({ profileImage: null }, () => dbUpload());
           });
         }
       }).catch(err => {
         switch(err.code) {
+          case "auth/email-already-in-use":
+            this.triggerDialog(this.props.screenProps.currentLang.errors.emailInUse);
+            this.triggerError(this.props.screenProps.currentLang.errors.emailInUse);
+            this.setState({ emailError: true });
+            break;
+          case "auth/invalid-email":
+            this.triggerDialog(this.props.screenProps.currentLang.errors.emailInvalid);
+            this.triggerError(this.props.screenProps.currentLang.errors.emailInvalid);
+            this.setState({ emailError: true });
+            break;
+          case "auth/weak-password":
+            this.triggerDialog(this.props.screenProps.currentLang.errors.passInvalid);
+            this.triggerError(this.props.screenProps.currentLang.errors.passInvalid);
+            this.setState({ passError: true });
+            break;
           case "auth/unknown":
-            this.triggerDialog(languages.currentLang.errors.networkError);
+            this.triggerDialog(this.props.screenProps.currentLang.errors.networkError);
             break;
           default:
-            this.triggerDialog(languages.currentLang.errors.unhandledError + err.message);
+            this.triggerDialog(this.props.screenProps.currentLang.errors.unhandledError + err.message);
         }
         this.setState({ loading: false })
       });
@@ -271,9 +283,8 @@ export default class RegisterScreen extends Component {
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
         {
-          title: languages.currentLang.labels.storagePermissionTitle,
-          message:
-          languages.currentLang.labels.storagePermissionText,
+          title: this.props.screenProps.currentLang.labels.storagePermissionTitle,
+          message: this.props.screenProps.currentLang.labels.storagePermissionText,
           buttonPositive: "OK",
         },
       );
@@ -324,7 +335,7 @@ export default class RegisterScreen extends Component {
               error={this.state.nameError}
               style={{ marginBottom: this.state.keyboardOpened ? 5 : 10 }}
               mode="outlined"
-              label={languages.currentLang.labels.name}
+              label={this.props.screenProps.currentLang.labels.name}
               value={this.state.nameText}
               onChangeText={text => this.setState({ nameText: text, nameError: false })}
               onFocus={() => this.setState({ nameError: false, keyboardOpened: true, higherInputFocused: true })}
@@ -347,7 +358,7 @@ export default class RegisterScreen extends Component {
               error={this.state.passError}
               style={{ marginBottom: this.state.keyboardOpened ? 5 : 10 }}
               mode="outlined"
-              label={languages.currentLang.labels.password}
+              label={this.props.screenProps.currentLang.labels.password}
               value={this.state.passText}
               onChangeText={text => this.setState({ passText: text, passError: false })}
               onFocus={() => this.setState({ passError: false, keyboardOpened: true, higherInputFocused: true })}
@@ -372,7 +383,7 @@ export default class RegisterScreen extends Component {
             error={this.state.emailError}
             style={{ marginBottom: this.state.keyboardOpened ? 5 : 10, marginHorizontal: 15 }}
             mode="outlined"
-            label={languages.currentLang.labels.email}
+            label={this.props.screenProps.currentLang.labels.email}
             value={this.state.emailText}
             onChangeText={text => this.setState({ emailText: text, emailError: false })}
             onFocus={() => this.setState({ emailError: false, keyboardOpened: true, higherInputFocused: true })}
@@ -392,7 +403,7 @@ export default class RegisterScreen extends Component {
             multiline={true}
             style={{ marginBottom: this.state.keyboardOpened ? 5 : 10, marginHorizontal: 15 }}
             mode="outlined"
-            label={languages.currentLang.labels.bio}
+            label={this.props.screenProps.currentLang.labels.bio}
             value={this.state.bioText}
             onChangeText={text => this.setState({ bioText: text })}
             onFocus={() => this.setState({ keyboardOpened: true, lowerInputFocused: true })}
@@ -409,7 +420,7 @@ export default class RegisterScreen extends Component {
             }}
           />)}
             <View style={{ display: "flex", flexDirection: "row" }}>
-              {!this.state.higherInputFocused && languages.currentLang.name === "english" && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 5, marginLeft: 15, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
+              {!this.state.higherInputFocused && this.props.screenProps.currentLang.name === "english" && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 5, marginLeft: 15, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
                 <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>Unit</Text>
                 <Picker
                   mode="dropdown"
@@ -421,18 +432,18 @@ export default class RegisterScreen extends Component {
                   <Picker.Item label="Imperial" value="imperial" />
                 </Picker>
               </View>)}
-              <View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 15, marginLeft: languages.currentLang.name !== "english" ? 15 : 5, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
-                <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>Gender</Text>
+              {!this.state.higherInputFocused && !this.state.lowerInputFocused && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 15, marginLeft: this.props.screenProps.currentLang.name !== "english" ? 15 : 5, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
+                <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>{this.props.screenProps.currentLang.labels.gender}</Text>
                 <Picker
                   mode="dropdown"
                   selectedValue={this.state.gender}
                   onValueChange={(itemValue) => {
                     this.setState({ gender: itemValue });
                   }}>
-                  <Picker.Item label="Male" value="male" />
-                  <Picker.Item label="Female" value="female" />
+                  <Picker.Item label={this.props.screenProps.currentLang.labels.male} value="male" />
+                  <Picker.Item label={this.props.screenProps.currentLang.labels.female} value="female" />
                 </Picker>
-              </View>
+              </View>)}
             </View>
           {!this.state.higherInputFocused && (<View style={{ display: "flex", flexDirection: "row" }}>
             <View style={{ flex: 9, marginLeft: 15, marginRight: 5 }}>
@@ -441,7 +452,7 @@ export default class RegisterScreen extends Component {
                 error={this.state.heightError}
                 style={{ marginBottom: 5 }}
                 mode="outlined"
-                label={languages.currentLang.labels.height}
+                label={this.props.screenProps.currentLang.labels.height}
                 value={this.state.heightText}
                 onChangeText={text => this.setState({ heightText: text.replace(/,/g, "."), heightError: false })}
                 onFocus={() => this.setState({ heightError: false, keyboardOpened: true, lowerInputFocused: true })}
@@ -458,7 +469,7 @@ export default class RegisterScreen extends Component {
                 }}
               />
               <View style={{ position: "absolute", right: 7, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "M" : "FT"}</Text>
+                <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "M" : "IN"}</Text>
               </View>
             </View>
             <View style={{ flex: 9, marginHorizontal: 5 }}>     
@@ -467,7 +478,7 @@ export default class RegisterScreen extends Component {
                 error={this.state.weightError}
                 style={{ marginBottom: 5 }}
                 mode="outlined"
-                label={languages.currentLang.labels.weight}
+                label={this.props.screenProps.currentLang.labels.weight}
                 value={this.state.weightText}
                 onChangeText={text => this.setState({ weightText: text.replace(/,/g, "."), weightError: false })}
                 onFocus={() => this.setState({ weightError: false, keyboardOpened: true, lowerInputFocused: true })}
@@ -486,7 +497,7 @@ export default class RegisterScreen extends Component {
                 <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "KG" : "LB"}</Text>
               </View>
             </View>
-            <Button onPress={() => this.setState({ datePickerOpen: true })} titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: "auto", marginBottom: "auto", backgroundColor: "transparent" }} containerStyle={{ display: "flex", flex: 10, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginLeft: 5, marginRight: 15, marginVertical: 5 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString() : languages.currentLang.labels.age} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />
+            <Button onPress={() => this.setState({ datePickerOpen: true })} raised titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: 0, marginBottom: 0, backgroundColor: colors.light, flex: 1 }} containerStyle={{ display: "flex", flex: 10, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginLeft: 5, marginRight: 15, marginVertical: 5 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString(this.state.unit === "metric" ? "en-GB" : "en-US") : this.props.screenProps.currentLang.labels.born} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />
             {this.state.datePickerOpen && (<DateTimePicker
               value={this.state.bornText}
               mode="date"
@@ -503,7 +514,7 @@ export default class RegisterScreen extends Component {
             containerStyle={{ top: this.state.higherInputFocused ? -30 : 0 }}
             titleStyle={{ color: colors.light }}
             buttonStyle={{ backgroundColor: colors.red }}
-            title={languages.currentLang.labels.register}
+            title={this.props.screenProps.currentLang.labels.register}
             type="solid"
             raised
             loading={this.state.loading}

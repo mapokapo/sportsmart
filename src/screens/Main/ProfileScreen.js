@@ -1,20 +1,16 @@
 import React, { Component } from "react"
-import { Text, View, AsyncStorage } from "react-native"
+import { Text, View, Picker } from "react-native"
 import { Button } from "react-native-elements";
 import * as colors from "../../media/colors";
 import auth from "@react-native-firebase/auth";
 import { LoginManager } from "react-native-fbsdk";
 import { GoogleSignin } from "@react-native-community/google-signin";
-import languages from "../../media/languages";
-import CustomPicker from './../../components/CustomPicker';
-import { Menu } from 'react-native-paper';
 
 export default class ProfileScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      unitPickerVisible: false,
-      language: languages.currentLang
+      unitPickerVisible: false
     };
   }
 
@@ -35,7 +31,7 @@ export default class ProfileScreen extends Component {
       <View>
         <Text> ProfileScreen </Text>
         <Button
-          title={languages.currentLang.labels.signOut}
+          title={this.props.screenProps.currentLang.labels.signOut}
           type="solid"
           buttonStyle={{ backgroundColor: colors.dark }}
           onPress={async () => {
@@ -45,17 +41,16 @@ export default class ProfileScreen extends Component {
             this.props.navigation.navigate("Auth");
           }}
         />
-        <CustomPicker language={this.state.language} menuOnPress={() => this.setState({ unitPickerVisible: true })} visible={this.state.unitPickerVisible} onDismiss={() => this.setState({
-          unitPickerVisible: false })}>
-          {languages.options.map(language => (
-            <Menu.Item key={language.name} title={this.capitalize(language.name)} onPress={() => {
-              AsyncStorage.setItem("sportsmartLanguage", JSON.stringify(language)).then(() => {
-                languages.currentLang = language;
-                this.setState({ language, unitPickerVisible: false });
-              });
-            }} />
+        <Picker
+          mode="dropdown"
+          selectedValue={this.props.screenProps.currentLang.name}
+          onValueChange={(itemValue) => {
+            this.props.screenProps.changeLanguage(itemValue);
+          }}>
+          {this.props.screenProps.languages.map(lang => (
+            <Picker.Item label={this.capitalize(lang.name)} value={lang.name} />
           ))}
-        </CustomPicker>
+        </Picker>
       </View>
     )
   }

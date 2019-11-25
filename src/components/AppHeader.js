@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import { LayoutAnimation } from "react-native";
 import { Appbar, Surface } from "react-native-paper";
 import * as colors from "../media/colors";
-import languages from "../media/languages";
 
 export default class AppHeader extends Component {
   constructor(props) {
@@ -26,7 +25,7 @@ export default class AppHeader extends Component {
           />
           <Appbar.Content
             color={colors.light}
-            title={this.state.setting === "Tabs" ? languages.currentLang.labels[this.props.navigation.state.key.toLowerCase()] : languages.currentLang.labels[this.props.navigation.state.routes[this.props.navigation.state.index].key.toLowerCase()]}
+            title={this.state.setting === "Tabs" ? this.props.screenProps.currentLang.labels[this.props.navigation.state.key.toLowerCase()] : this.props.screenProps.currentLang.labels[this.props.navigation.state.routes[this.props.navigation.state.index].key.toLowerCase()]}
           />
         </Appbar.Header>
       </Surface>

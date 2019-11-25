@@ -1,4 +1,4 @@
-let options = [
+const languages = [
   {
     name: "english",
     errors: {
@@ -20,7 +20,8 @@ let options = [
       imageNetworkError: "Network error while uploading image.",
       imageUnhandledError: "An unhandled error while uploading image has occured: \n\n",
       facebookResetPassError: "Error: unable to reset password. Facebook users can not reset their password with Sportsmart.",
-      ageEmpty: "Please fill in the birth date field."
+      ageEmpty: "Please fill in the birth date field.",
+      emailInUse: "That email is already in use. Please try again."
     },
     labels: {
       error: "Error",
@@ -51,7 +52,13 @@ let options = [
       register: "Register",
       resetPass: "Reset Password",
       signOut: "Sign Out",
-      born: "Birth date"
+      born: "Birth date",
+      kjoules: "Kilojoules",
+      fat: "Fat",
+      male: "Male",
+      female: "Female",
+      gender: "Gender",
+      pause: "Pause"
     }
   },
   {
@@ -75,7 +82,8 @@ let options = [
       imageNetworkError: "Pogreška sa mrežom tijekom učitavanje slike.",
       imageUnhandledError: "Nepoznata pogreška tijekom učitavanje slike: \n\n",
       facebookResetPassError: "Pogreška u mijenjanju lozinke: Facebook korisnici ne mogu promijeniti lozinku pomoću Sportsmarta",
-      ageEmpty: "Molimo vas da ispunite polje za datum rođenja"
+      ageEmpty: "Molimo vas da ispunite polje za datum rođenja",
+      emailInUse: "Taj email je već u uporabi. Molimo vas pokušajte ponovo."
     },
     labels: {
       error: "Greška",
@@ -104,16 +112,21 @@ let options = [
       register: "Registriraj se",
       resetPass: "Promjeni lozinku",
       signOut: "Odjavi se",
-      born: "Datum rođenja"
+      born: "Datum rođenja",
+      kjoules: "Kilodžuli",
+      fat: "Mast",
+      male: "Muško",
+      female: "Žensko",
+      gender: "Spol",
+      pause: "Pauza"
     }
   }
 ];
 
-let defaultLang = options[0];
-let currentLang = defaultLang;
+const defaultLang = languages[1];  // 0 - English,   1 - Hrvatski
+const currentLang = defaultLang;
 
-module.exports = {
-  defaultLang: defaultLang,
+export default {
   currentLang: currentLang,
-  options: options
+  languages: languages
 }

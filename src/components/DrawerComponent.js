@@ -1,12 +1,11 @@
 import React, { Component } from "react";
-import { Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Text, TouchableOpacity, StyleSheet, ToastAndroid } from "react-native";
 import { Drawer, Divider } from "react-native-paper";
 import { Icon, Image } from "react-native-elements";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import * as colors from "../media/colors";
 import { GraphRequest, GraphRequestManager, AccessToken } from "react-native-fbsdk";
-import languages from "../media/languages";
 
 export default class DrawerComponent extends Component {
   constructor(props) {
@@ -56,7 +55,7 @@ export default class DrawerComponent extends Component {
           } else if (user.providerData[0].providerId === "google.com") {
             this.setState({ user: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
           } else if (!doc.exists) {
-            return;
+            ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
           } else {
             const { name, email, profileImage } = doc.data();
             this.setState({ user: { name, email, profileImage } });
@@ -91,7 +90,7 @@ export default class DrawerComponent extends Component {
           return (
             <Drawer.Item
               key={index}
-              label={languages.currentLang.labels[item.toLowerCase()]}
+              label={this.props.screenProps.currentLang.labels[item.toLowerCase()]}
               onPress={() => {
                 this.props.navigation.navigate(item);
               }}

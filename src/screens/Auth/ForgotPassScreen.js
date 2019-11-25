@@ -4,7 +4,6 @@ import * as colors from "../../media/colors";
 import { TextInput } from "react-native-paper";
 import { Button } from "react-native-elements";
 import auth from "@react-native-firebase/auth";
-import languages from "../../media/languages";
 
 export default class ForgotPassScreen extends Component {
   constructor(props) {
@@ -14,7 +13,8 @@ export default class ForgotPassScreen extends Component {
       emailError: false,
       loading: false,
       currentError: null,
-      currentTimeout: null
+      currentTimeout: null,
+      currentLang: this.props.screenProps.currentLang
     };
   }
 
@@ -40,24 +40,24 @@ export default class ForgotPassScreen extends Component {
   handleResetPass = () => {
     if (this.state.emailText === "") {
       this.setState({ emailError: true }, () => {
-        this.triggerError(languages.currentLang.errors.emailEmpty);
+        this.triggerError(this.state.currentLang.errors.emailEmpty);
       });
       return;
     }
     if (!this.emailCheck(this.state.emailText)) {
       this.setState({ emailError: true }, () => {
-        this.triggerError(languages.currentLang.errors.emailInvalid);
+        this.triggerError(this.state.currentLang.errors.emailInvalid);
       })
       return;
     }
     auth().fetchSignInMethodsForEmail(this.state.emailText).then(methods => {
       if (methods.length === 0) {
         this.setState({ emailError: true }, () => {
-          this.triggerError(languages.currentLang.errors.userNotFound);
+          this.triggerError(this.state.currentLang.errors.userNotFound);
         });
       } else if (methods.indexOf("password") === -1) {
         this.setState({ emailError: true }, () => {
-          this.triggerError(languages.currentLang.errors.facebookResetPassError, 5);
+          this.triggerError(this.state.currentLang.errors.facebookResetPassError, 5);
         });
       } else {
         auth().sendPasswordResetEmail(this.state.emailText);
@@ -68,14 +68,14 @@ export default class ForgotPassScreen extends Component {
   render() {
     return (
       <View style={styles.mainWrapper}>
-        <Text style={{ color: colors.dark, fontSize: 18 }}>{languages.currentLang.labels.resetPassScreenText}</Text>
+        <Text style={{ color: colors.dark, fontSize: 18 }}>{this.state.currentLang.labels.resetPassScreenText}</Text>
         <TextInput
           keyboardType="email-address"
           textContentType="emailAddress"
           error={this.state.emailError}
           style={{ marginTop: 5 }}
           mode="flat"
-          label={languages.currentLang.labels.email}
+          label={this.state.currentLang.labels.email}
           value={this.state.emailText}
           onChangeText={text => this.setState({ emailText: text, emailError: false })}
           onFocus={() => this.setState({ emailError: false, keyboardOpened: true })}
@@ -91,7 +91,7 @@ export default class ForgotPassScreen extends Component {
           containerStyle={{ marginTop: "auto" }}
           titleStyle={{ color: colors.light }}
           buttonStyle={{ backgroundColor: colors.dark }}
-          title={languages.currentLang.labels.resetPass}
+          title={this.state.currentLang.labels.resetPass}
           type="solid"
           raised
           loading={this.state.loading}

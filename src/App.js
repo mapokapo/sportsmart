@@ -37,12 +37,7 @@ import AppHeader from "./components/AppHeader";
 import DrawerComponent from "./components/DrawerComponent";
 import * as colors from "./media/colors";
 import { Icon } from "react-native-elements";
-import languages from "./media/languages";
-
-let language = languages.currentLang;
-AsyncStorage.getItem("sportsmartLanguage").then(result => {
-  if (result) language = JSON.parse(result);
-});
+import localization from "./media/languages";
 
 const NotifiersStack = createStackNavigator({
   Notifiers: {
@@ -62,23 +57,23 @@ const BottomTabNavigator = createStackNavigator({
   TabsStack: createBottomTabNavigator({
     Running: {
       screen: RunningScreen,
-      navigationOptions: () => ({
+      navigationOptions: ({ screenProps }) => ({
         tabBarIcon: ({ tintColor }) => (<Icon type="material-community" name="run" color={tintColor} size={24} />),
-        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{language.labels.running}</Text>
+        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{screenProps.currentLang.labels.running}</Text>
       })
     },
     Notifiers: {
       screen: NotifiersStack,
-      navigationOptions: () => ({
+      navigationOptions: ({ screenProps }) => ({
         tabBarIcon: ({ tintColor }) => (<Icon type="material-community" name="alarm" color={tintColor} size={24} />),
-        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{language.labels.notifiers}</Text>
+        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{screenProps.currentLang.labels.notifiers}</Text>
       })
     },
     Profile: {
       screen: ProfileScreen,
-      navigationOptions: () => ({
+      navigationOptions: ({ screenProps }) => ({
         tabBarIcon: ({ tintColor }) => (<Icon type="material-community" name="account" color={tintColor} size={24} />),
-        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{language.labels.profile}</Text>
+        tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{screenProps.currentLang.labels.profile}</Text>
       })
     }
   }, {
@@ -93,8 +88,8 @@ const BottomTabNavigator = createStackNavigator({
     }
   })
 }, {
-  defaultNavigationOptions: ({ navigation }) => ({
-    header: <AppHeader navigation={navigation} />
+  defaultNavigationOptions: ({ navigation, screenProps }) => ({
+    header: <AppHeader navigation={navigation} screenProps={screenProps} />
   })
 });
 
@@ -122,22 +117,22 @@ const AuthStack = createStackNavigator({
   },
   Register: {
     screen: RegisterScreen,
-    navigationOptions: () => ({
+    navigationOptions: ({ screenProps }) => ({
       headerTintColor: colors.light,
       headerStyle: {
         backgroundColor: colors.dark
       },
-      headerTitle: language.labels.register
+      headerTitle: screenProps.currentLang.labels.register
     })
   },
   ForgotPass: {
     screen: ForgotPassScreen,
-    navigationOptions: () => ({
+    navigationOptions: ({ screenProps }) => ({
       headerTintColor: colors.light,
       headerStyle: {
         backgroundColor: colors.dark
       },
-      headerTitle: language.labels.resetPass
+      headerTitle: screenProps.currentLang.labels.resetPass
     })
   }
 }, {
@@ -153,4 +148,36 @@ const AppSwitchNavigator = createSwitchNavigator({
   initialRouteName: "Loading"
 });
 
-export default createAppContainer(AppSwitchNavigator);
+let AppContainer = createAppContainer(AppSwitchNavigator);
+
+export default class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      languages: localization.languages,
+      currentLang: localization.currentLang
+    }
+  }
+
+  componentDidMount = () => {
+    AsyncStorage.getItem("sportsmartLanguage").then(item => {
+      if (item) this.setState({ currentLang: JSON.parse(item) });
+    });
+  }
+
+  changeLanguage = langStr => {
+    this.state.languages.forEach(lang => {
+      if (langStr === lang.name) {
+        this.setState({ currentLang: lang }, () => {
+          AsyncStorage.setItem("sportsmartLanguage", JSON.stringify(lang));
+        });
+      }
+    })
+  }
+
+  render() {
+    return (
+      <AppContainer screenProps={{ languages: this.state.languages, currentLang: this.state.currentLang, changeLanguage: this.changeLanguage }} />
+    )
+  }
+}
