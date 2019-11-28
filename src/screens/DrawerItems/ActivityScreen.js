@@ -6,7 +6,7 @@ export default class ActivityScreen extends Component {
   render() {
     return (
       <View>
-        <AppHeader navigation={this.props.navigation} />
+        <AppHeader navigation={this.props.navigation} screenProps={this.props.screenProps} />
         <Text> ActivityScreen </Text>
       </View>
     )

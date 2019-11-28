@@ -47,8 +47,8 @@ export default class ProfileScreen extends Component {
           onValueChange={(itemValue) => {
             this.props.screenProps.changeLanguage(itemValue);
           }}>
-          {this.props.screenProps.languages.map(lang => (
-            <Picker.Item label={this.capitalize(lang.name)} value={lang.name} />
+          {this.props.screenProps.languages.map((lang, index) => (
+            <Picker.Item key={index} label={this.capitalize(lang.name)} value={lang.name} />
           ))}
         </Picker>
       </View>

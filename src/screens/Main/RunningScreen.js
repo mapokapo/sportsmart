@@ -179,7 +179,7 @@ export default class RunningScreen extends Component {
             age--;
         }
         return age;
-    }
+      }
       const { weight, height, born, gender, unit } = this.state.userData;
       const age = getAge(born);
       let v;

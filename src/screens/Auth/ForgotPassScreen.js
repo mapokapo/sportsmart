@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Text, View, StyleSheet, LayoutAnimation } from "react-native";
+import { Text, View, StyleSheet, LayoutAnimation, UIManager } from "react-native";
 import * as colors from "../../media/colors";
 import { TextInput } from "react-native-paper";
 import { Button } from "react-native-elements";
@@ -16,6 +16,10 @@ export default class ForgotPassScreen extends Component {
       currentTimeout: null,
       currentLang: this.props.screenProps.currentLang
     };
+
+    if (Platform.OS === "android") {
+      UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
   }
 
   triggerError = (msg, duration) => {

@@ -21,7 +21,8 @@ const languages = [
       imageUnhandledError: "An unhandled error while uploading image has occured: \n\n",
       facebookResetPassError: "Error: unable to reset password. Facebook users can not reset their password with Sportsmart.",
       ageEmpty: "Please fill in the birth date field.",
-      emailInUse: "That email is already in use. Please try again."
+      emailInUse: "That email is already in use. Please try again.",
+      timeError: "Invalid time. Please try again."
     },
     labels: {
       error: "Error",
@@ -58,7 +59,13 @@ const languages = [
       male: "Male",
       female: "Female",
       gender: "Gender",
-      pause: "Pause"
+      pause: "Pause",
+      createNotifier: "Edit Notifier",
+      time: "Set the time",
+      description: "Description",
+      finish: "Finish",
+      delete: "Delete",
+      alarmSet: "Alarm set for {0} hour/s, {1} minute/s, and {2} second/s"
     }
   },
   {
@@ -83,7 +90,8 @@ const languages = [
       imageUnhandledError: "Nepoznata pogreška tijekom učitavanje slike: \n\n",
       facebookResetPassError: "Pogreška u mijenjanju lozinke: Facebook korisnici ne mogu promijeniti lozinku pomoću Sportsmarta",
       ageEmpty: "Molimo vas da ispunite polje za datum rođenja",
-      emailInUse: "Taj email je već u uporabi. Molimo vas pokušajte ponovo."
+      emailInUse: "Taj email je već u uporabi. Molimo vas pokušajte ponovo.",
+      timeError: "Nevažeće vrijeme. Molimo pokušajte ponovo."
     },
     labels: {
       error: "Greška",
@@ -118,7 +126,13 @@ const languages = [
       male: "Muško",
       female: "Žensko",
       gender: "Spol",
-      pause: "Pauza"
+      pause: "Pauza",
+      createNotifier: "Namjesti obavijest",
+      time: "Namjesti vrijeme",
+      description: "Opis",
+      finish: "Završi",
+      delete: "Izbriši",
+      alarmSet: "Vrijeme postavljeno za {0} sat/i, {1} minut/a, i {2} sekund/i."
     }
   }
 ];

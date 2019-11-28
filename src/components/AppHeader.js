@@ -17,15 +17,15 @@ export default class AppHeader extends Component {
         <Appbar.Header style={{ backgroundColor: colors.dark }}>
           <Appbar.Action
             color={colors.light}
-            icon={this.state.setting === "Tabs" ? "arrow-back" : "menu"}
+            icon={this.state.setting === "Tabs" || this.state.setting === true ? "arrow-back" : "menu"}
             onPress={() => {
               LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-              this.state.setting === "Tabs" ? this.props.navigation.goBack() : this.props.navigation.toggleDrawer();
+              this.state.setting === "Tabs" || this.state.setting === true ? this.props.navigation.goBack() : this.props.navigation.toggleDrawer();
             }}
           />
           <Appbar.Content
             color={colors.light}
-            title={this.state.setting === "Tabs" ? this.props.screenProps.currentLang.labels[this.props.navigation.state.key.toLowerCase()] : this.props.screenProps.currentLang.labels[this.props.navigation.state.routes[this.props.navigation.state.index].key.toLowerCase()]}
+            title={this.state.setting === "Tabs" || this.state.setting === true ? this.props.screenProps.currentLang.labels[this.props.navigation.state.key.toLowerCase()] : this.props.screenProps.currentLang.labels[this.props.navigation.state.routes[this.props.navigation.state.index].key.toLowerCase()]}
           />
         </Appbar.Header>
       </Surface>

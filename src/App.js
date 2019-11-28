@@ -7,7 +7,8 @@
  */
 
 import React from "react";
-import { AsyncStorage, Text } from "react-native";
+import { Text } from "react-native";
+import AsyncStorage from "@react-native-community/async-storage";
 
 import { createAppContainer, createSwitchNavigator } from "react-navigation";
 import { createDrawerNavigator } from "react-navigation-drawer";
@@ -16,7 +17,7 @@ import { createBottomTabNavigator } from "react-navigation-tabs";
 
 /* Tab Navigator Components */
 import RunningScreen from "./screens/Main/RunningScreen";
-import { NotifiersScreen, CreateNotifierScreen } from "./screens/Main/Notifiers";
+import NotifiersScreen from "./screens/Main/Notifiers";
 import ProfileScreen from "./screens/Main/ProfileScreen";
 
 /* Drawer Item Components */
@@ -39,20 +40,6 @@ import * as colors from "./media/colors";
 import { Icon } from "react-native-elements";
 import localization from "./media/languages";
 
-const NotifiersStack = createStackNavigator({
-  Notifiers: {
-    screen: NotifiersScreen
-  },
-  CreateNotifier: {
-    screen: CreateNotifierScreen
-  }
-}, {
-  headerMode: "none",
-  navigationOptions: {
-    header: null
-  }
-});
-
 const BottomTabNavigator = createStackNavigator({
   TabsStack: createBottomTabNavigator({
     Running: {
@@ -63,7 +50,7 @@ const BottomTabNavigator = createStackNavigator({
       })
     },
     Notifiers: {
-      screen: NotifiersStack,
+      screen: NotifiersScreen,
       navigationOptions: ({ screenProps }) => ({
         tabBarIcon: ({ tintColor }) => (<Icon type="material-community" name="alarm" color={tintColor} size={24} />),
         tabBarLabel: ({ focused, tintColor }) => <Text style={{ textAlign: "center", color: tintColor, height: focused ? "auto" : 0 }}>{screenProps.currentLang.labels.notifiers}</Text>
@@ -79,6 +66,7 @@ const BottomTabNavigator = createStackNavigator({
   }, {
     initialRouteName: "Running",
     tabBarOptions: {
+      keyboardHidesTabBar: true,
       activeTintColor: colors.red,
       inactiveTintColor: colors.light,
       style: {
