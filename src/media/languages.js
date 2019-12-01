@@ -22,7 +22,8 @@ const languages = [
       facebookResetPassError: "Error: unable to reset password. Facebook users can not reset their password with Sportsmart.",
       ageEmpty: "Please fill in the birth date field.",
       emailInUse: "That email is already in use. Please try again.",
-      timeError: "Invalid time. Please try again."
+      timeError: "Invalid time. Please try again.",
+      mapError: "Unknown error with location: \n\n"
     },
     labels: {
       error: "Error",
@@ -55,7 +56,6 @@ const languages = [
       signOut: "Sign Out",
       born: "Birth date",
       kjoules: "Kilojoules",
-      fat: "Fat",
       male: "Male",
       female: "Female",
       gender: "Gender",
@@ -65,7 +65,8 @@ const languages = [
       description: "Description",
       finish: "Finish",
       delete: "Delete",
-      alarmSet: "Alarm set for {0} hour/s, {1} minute/s, and {2} second/s"
+      alarmSet: "Alarm set for {0} hour/s, {1} minute/s, and {2} second/s",
+      distance: "Distance"
     }
   },
   {
@@ -91,7 +92,8 @@ const languages = [
       facebookResetPassError: "Pogreška u mijenjanju lozinke: Facebook korisnici ne mogu promijeniti lozinku pomoću Sportsmarta",
       ageEmpty: "Molimo vas da ispunite polje za datum rođenja",
       emailInUse: "Taj email je već u uporabi. Molimo vas pokušajte ponovo.",
-      timeError: "Nevažeće vrijeme. Molimo pokušajte ponovo."
+      timeError: "Nevažeće vrijeme. Molimo pokušajte ponovo.",
+      mapError: "Nepoznata greška sa lokacijom: \n\n"
     },
     labels: {
       error: "Greška",
@@ -122,7 +124,6 @@ const languages = [
       signOut: "Odjavi se",
       born: "Datum rođenja",
       kjoules: "Kilodžuli",
-      fat: "Mast",
       male: "Muško",
       female: "Žensko",
       gender: "Spol",
@@ -132,7 +133,8 @@ const languages = [
       description: "Opis",
       finish: "Završi",
       delete: "Izbriši",
-      alarmSet: "Vrijeme postavljeno za {0} sat/i, {1} minut/a, i {2} sekund/i."
+      alarmSet: "Vrijeme postavljeno za {0} sat/i, {1} minut/a, i {2} sekund/i.",
+      distance: "Duljina"
     }
   }
 ];

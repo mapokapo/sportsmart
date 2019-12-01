@@ -1,11 +1,12 @@
 import React, { Component } from "react";
-import { Dimensions, View, StyleSheet, ScrollView, PermissionsAndroid, Text } from "react-native";
+import { Dimensions, View, StyleSheet, ScrollView, PermissionsAndroid, Text, ToastAndroid } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { Button } from "react-native-elements";
 import * as colors from "../../media/colors";
 import Geolocation from "react-native-geolocation-service";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import BackgroundGeolocation from "@mauron85/react-native-background-geolocation";
 
 const screenWidth = Math.round(Dimensions.get("window").width);
 const screenHeight = Math.round(Dimensions.get("window").height);
@@ -15,23 +16,19 @@ export default class RunningScreen extends Component {
     super(props);
     this.state = {
       isRunning: false,
-      displayLines: false,
-      mapLoaded: false,
       userData: null,
       locationPermission: false,
+      mapLoaded: false,
       duration: 0,
-      distanceTravelled: 0,
       position: {
-        currentLat: 0,
-        currentLong: 0,
-        coordArray: [],
+        lat: 0,
+        long: 0,
+        markerArray: [],
         distance: 0,
-        prevCoords: {},
-        intitialCoords: null
+        startingCoords: {}
       },
       kcal: 0,
-      kjoules: 0,
-      fat: 0
+      kjoules: 0
     };
   }
 
@@ -63,7 +60,7 @@ export default class RunningScreen extends Component {
   
       return R * c;
     }
-    return haversine(this.state.position.prevCoords, newLatLng, { unit: this.state.userData ? this.state.userData.unit : "km" }) || 0;
+    return haversine(this.state.position.startingCoords, newLatLng, { unit: this.state.userData.unit === "imperial" ? "mile" : "km" }) || 0;
   };
 
   requestLocationPermission = () => new Promise(async (resolve, reject) => {
@@ -84,44 +81,74 @@ export default class RunningScreen extends Component {
     }
   });
 
-  mapPrepare() {
-    this.watchID = Geolocation.watchPosition(
-      position => {
-        let newCoordinate = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        };
-        this.setState({
-          position: {
-            currentLat: position.coords.latitude,
-            currentLong: position.coords.longitude,
-            coordArray: this.state.isRunning ? this.state.position.coordArray.concat([newCoordinate]) : [newCoordinate],
-            prevCoords: newCoordinate,
-            distance: this.state.position.distance + this.state.isRunning ? this.calcDistance(newCoordinate) : 0,
-            intitialCoords: this.state.isRunning ? this.state.position.intitialCoords : newCoordinate
-          }
-        }, () => {
-          this.setState({ distanceTravelled: this.state.distanceTravelled + this.state.position.distance }, () => {
-            if (this.state.mapLoaded) {
-              this.map.animateToRegion({
-                latitude: newCoordinate.latitude,
-                longitude: newCoordinate.longitude,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421
-              }, 500);
-              this.getCalories();
-            }
-          });
-        });
-      },
-      (err) => console.log(err),
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, interval: 1000 }
-    );
+  foregroundLocFetch = () => {
+    this.foregroundWatch = Geolocation.watchPosition(position => {
+      let newCoordinate = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+      this.setState({
+        position: {
+          lat: newCoordinate.latitude,
+          long: newCoordinate.longitude,
+          markerArray: [newCoordinate],
+          distance: 0,
+          startingCoords: newCoordinate
+        }
+      }, () => {
+        this.map.animateToRegion({
+          latitude: this.state.position.lat,
+          longitude: this.state.position.long,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421
+        }, 500);
+        this.state.userData && this.state.isRunning && this.getCalories();
+      });
+    },
+    error => ToastAndroid.show(this.props.screenProps.currentLang.errors.mapError + error.message, ToastAndroid.SHORT),
+    { enableHighAccuracy: true, interval: 1000, fastestInterval: 1000, distanceFilter: 30 });
   }
 
   componentDidMount() {
+    BackgroundGeolocation.configure({
+      desiredAccuracy: BackgroundGeolocation.HIGH_ACCURACY,
+      debug: false,
+      stationaryRadius: 10,
+      distanceFilter: 30,
+      notificationTitle: "Sportsmart location tracking",
+      startOnBoot: false,
+      startForeground: true,
+      locationProvider: BackgroundGeolocation.DISTANCE_FILTER_PROVIDER,
+      interval: 1000,
+      fastestInterval: 1000,
+      activitiesInterval: 1000,
+      notificationsEnabled: false
+    });
+    BackgroundGeolocation.on("location", location => {
+      let newCoordinate = {
+        latitude: location.latitude,
+        longitude: location.longitude
+      };
+      this.setState({
+        position: {
+          lat: newCoordinate.latitude,
+          long: newCoordinate.longitude,
+          markerArray: this.state.position.markerArray.concat([newCoordinate]),
+          distance: this.calcDistance(newCoordinate),
+          startingCoords: this.state.position.startingCoords
+        }
+      }, () => {
+        this.map.animateToRegion({
+          latitude: this.state.position.lat,
+          longitude: this.state.position.long,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421
+        }, 500);
+        this.state.userData && this.state.isRunning && this.getCalories();
+      });
+    });
     this.unsubscribe = auth().onAuthStateChanged(async user => {
-      if (user) {
+      if (user && user.providerId === "firebase") {
         let doc = await firestore().collection("users").doc(user.uid).get();
         if (doc.exists) this.setState({ userData: doc.data() }, () => this.getCalories());
       }
@@ -131,20 +158,30 @@ export default class RunningScreen extends Component {
 
   startRunning = async () => {
     if (!this.state.isRunning) {
-      this.setState({ isRunning: true, displayLines: true });
+      Geolocation.clearWatch(this.foregroundWatch);
+      this.foregroundWatch = null;
+      Geolocation.stopObserving();
+      BackgroundGeolocation.start();
+      this.setState({ isRunning: true });
       this.interval = setInterval(() => {
         this.setState({ duration: this.state.duration + 1 });
+        this.map.animateToRegion({
+          latitude: this.state.position.lat,
+          longitude: this.state.position.long,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421
+        }, 500);
       }, 1000);
     }
   }
 
   stopRunning = async () => {
-    if (this.state.isRunning && this.state.displayLines) {
+    if (this.state.isRunning) {
       clearInterval(this.interval);
       this.interval = null;
-      this.setState({ isRunning: false });
-    } else if (!this.state.isRunning && this.state.displayLines) {
-      this.setState({ displayLines: false, distanceTravelled: 0, duration: 0, kcal: 0, kjoules: 0, fat: 0, position: { ...this.state.position, coordArray: [this.state.position.coordArray[this.state.position.coordArray.length-1]], distance: 0, initialCoords: null } });
+      BackgroundGeolocation.stop();
+      this.foregroundLocFetch();
+      this.setState({ isRunning: false, duration: 0, kcal: 0, kjoules: 0, position: { lat: this.state.position.lat, long: this.state.position.long, markerArray: [{ longitude: this.state.position.long, latitude: this.state.position.lat }], distance: 0, startingCoords: { longitude: this.state.position.long, latitude: this.state.position.lat } } });
     }
   }
 
@@ -154,19 +191,23 @@ export default class RunningScreen extends Component {
     return date.toISOString().substr(11, 8);
   }
 
-  getCalories() {
-    console.log(this.state.duration, this.state.distanceTravelled, this.state.isRunning)
-    if (this.state.duration !== 0 && this.state.distanceTravelled !== 0 && this.state.isRunning) {
+  getCalories = () => {
+    if (Math.round(this.state.position.distance * 100) / 100 > 0) {
       const getMets = () => {
-        const totalTime = this.state.duration / 3600;
-        const totalDistance = this.state.distanceTravelled;
+        const totalTime = this.state.duration / 3600;  // hours
+        const totalDistance = this.state.position.distance;  // km
         const speed = Math.round((totalDistance/totalTime)*2)/2;
         let metValues = [5.3, 5.8, 6.2, 6.7, 7.2, 7.7, 8.1, 8.6, 9.1, 9.6, 10.0, 10.5, 11.0, 11.5, 12.0, 12.4, 12.9, 13.4, 13.9, 14.3, 14.8, 15.3, 15.8, 16.2, 16.7, 17.2, 17.7, 18.1, 18.6, 19.1, 19.6, 20.0, 20.5, 21.0, 21.5, 22.0, 22.4, 22.9, 23.4, 23.9];
         let finalMetValue;
         if (speed < 5) {
           finalMetValue = metValues[0];
         } else {
-          finalMetValue = metValues[(speed - 5) / 0.5 + 1];
+          let index = (speed - 5) / 0.5 + 1;
+          if (index >= metValues.length) {
+            finalMetValue = metValues[metValues.length-1];
+          } else {
+            finalMetValue = metValues[index];
+          }
         }
         return finalMetValue;
       }
@@ -191,26 +232,27 @@ export default class RunningScreen extends Component {
         else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
       }
       const mets = getMets();
-      let x = (v * mets)/24; // kcal per hour
-      x = x * this.state.duration; // kcal
-      this.setState({ kcal: x, kjoules: x * 4.184, fat: x / 7650 });
+      let x = Math.round(((v / 24) * mets * (this.state.duration / 3600)) * 2) / 2; // kcal, rounded
+      this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2 });
     }
   }
 
-  componentWillUnmount() {
+  componentWillUnmount = () => {
     this.unsubscribe();
     Geolocation.clearWatch(this.watchID);
+    BackgroundGeolocation.removeAllListeners();
+    BackgroundGeolocation.stop();
   }
 
   render() {
     return (
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
-        <View style={{ position: "absolute", zIndex: 1, display: "flex", flexDirection: "row", justifyContent: "center", width: screenWidth }}>
+        {this.state.mapLoaded && (<View style={{ position: "absolute", zIndex: 1, display: "flex", flexDirection: "row", justifyContent: "center", width: screenWidth }}>
           <View style={{ display: "flex", flexDirection: "row" }}>
-            <Button title="START" onPress={() => this.startRunning()} titleStyle={{ fontSize: 24 }} buttonStyle={{ backgroundColor: "rgba(0, 255, 0, 0.3)", paddingVertical: 8 }} containerStyle={{ flexGrow: 1 }} />
-            {this.state.displayLines && (<Button title={this.state.isRunning ? this.props.screenProps.labels.pause : "STOP"} onPress={() => this.stopRunning()} titleStyle={{ fontSize: 24 }} buttonStyle={{ backgroundColor: "rgba(255, 0, 0, 0.3)", paddingVertical: 8 }} containerStyle={{ flexGrow: 1 }} />)}
+            {!this.state.isRunning && (<Button title="START" onPress={() => this.startRunning()} titleStyle={{ fontSize: 24 }} buttonStyle={{ backgroundColor: "rgba(0, 255, 0, 0.3)", paddingVertical: 8 }} containerStyle={{ flexGrow: 1 }} />)}
+            {this.state.isRunning && (<Button title="STOP" onPress={() => this.stopRunning()} titleStyle={{ fontSize: 24 }} buttonStyle={{ backgroundColor: "rgba(255, 0, 0, 0.3)", paddingVertical: 8 }} containerStyle={{ flexGrow: 1 }} />)}
           </View>
-        </View>
+        </View>)}
         {this.state.locationPermission && (
           <View style={{ width: screenWidth, height: screenWidth, flex: 1, zIndex: 0 }}>
             <MapView
@@ -218,15 +260,15 @@ export default class RunningScreen extends Component {
               followsUserLocation
               style={styles.map}
               ref={ref => this.map = ref}
-              onLayout={() => this.setState({ mapLoaded: true }, () => this.mapPrepare())}
+              onLayout={() => this.setState({ mapLoaded: true }, () => this.foregroundLocFetch())}
               initialRegion={{
-                latitude: this.state.position.currentLat,
-                longitude: this.state.position.currentLong,
+                latitude: this.state.position.lat,
+                longitude: this.state.position.long,
                 latitudeDelta: 0.0922,
                 longitudeDelta: 0.0421
               }}>
-              {this.state.displayLines && (<Polyline coordinates={this.state.position.coordArray} strokeWidth={3} />)}
-              {this.state.displayLines && (<Marker coordinate={this.state.position.intitialCoords} />)}
+              {this.state.isRunning && (<Polyline coordinates={this.state.position.markerArray} strokeWidth={3} />)}
+              {this.state.isRunning && (<Marker coordinate={this.state.position.startingCoords} />)}
             </MapView>
           </View>
         )}
@@ -235,7 +277,7 @@ export default class RunningScreen extends Component {
             <Text style={{ textAlign: "center", color: colors.light, fontSize: 38 }}>{this.formatTime(this.state.duration)}</Text>
             <Text style={{ textAlign: "center", color: "#999", fontSize: 24 }}>{this.props.screenProps.currentLang.labels.duration}</Text>
           </View>
-          <View style={{ flex: 2, display: "flex", flexDirection: "row" }}>
+          {this.state.userData !== null ?(<View style={{ flex: 2, display: "flex", flexDirection: "row" }}>
             <View style={{ flex: 1, borderRightColor: colors.light, borderRightWidth: StyleSheet.hairlineWidth, display: "flex", justifyContent: "center", alignItems: "center" }}>
               <Text style={{ textAlign: "center", color: colors.light, fontSize: 30 }}>{this.state.userData && this.state.userData.unit === "metric" ? this.state.kcal : this.state.kcal / 1000}</Text>
               <Text style={{ textAlign: "center", color: "#999", fontSize: 20 }}>{this.state.userData && this.state.userData.unit === "metric" ? "Kcal" : "Calories"}</Text>
@@ -245,10 +287,15 @@ export default class RunningScreen extends Component {
               <Text style={{ textAlign: "center", color: "#999", fontSize: 20 }}>{this.props.screenProps.currentLang.labels.kjoules}</Text>
             </View>
             <View style={{ flex: 1, borderLeftColor: colors.light, borderLeftWidth: StyleSheet.hairlineWidth, display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ textAlign: "center", color: colors.light, fontSize: 30 }}>{this.state.fat}</Text>
-              <Text style={{ textAlign: "center", color: "#999", fontSize: 20 }}>{this.props.screenProps.currentLang.labels.fat}</Text>
+              <Text style={{ textAlign: "center", color: colors.light, fontSize: 30 }}>{Math.round(this.state.position.distance * 100) / 100}</Text>
+              <Text style={{ textAlign: "center", color: "#999", fontSize: 20 }}>{this.props.screenProps.currentLang.labels.distance}</Text>
             </View>
-          </View>
+          </View>) : (<View style={{ flex: 2, display: "flex", flexDirection: "row" }}>
+            <View style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", marginRight: "auto", marginLeft: "auto" }}>
+              <Text style={{ textAlign: "center", color: colors.light, fontSize: 30 }}>{Math.round(this.state.position.distance * 100) / 100}</Text>
+              <Text style={{ textAlign: "center", color: "#999", fontSize: 20 }}>{this.props.screenProps.currentLang.labels.distance}</Text>
+            </View>
+          </View>)}
         </View>
       </ScrollView>
     )

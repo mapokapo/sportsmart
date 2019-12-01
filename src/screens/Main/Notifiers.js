@@ -2,8 +2,9 @@ import React, { Component } from "react";
 import { Text, View, FlatList, Switch, LayoutAnimation, UIManager, ToastAndroid } from "react-native";
 import { ListItem, Button } from "react-native-elements";
 import * as colors from "../../media/colors";
-import { Dialog, Portal, TextInput, FAB } from 'react-native-paper';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { Dialog, Portal, TextInput, FAB } from "react-native-paper";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import PushNotification from "react-native-push-notification";
 
 var counter = -1;
 
@@ -39,18 +40,33 @@ class NotifiersScreen extends Component {
     if (Platform.OS === "android") {
       UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
     }
+    String.prototype.format = function() {
+      let args = arguments;
+      return this.replace(/{(\d+)}/g, function(match, number) { 
+        return typeof args[number] != "undefined"
+          ? args[number]
+          : match
+        ;
+      });
+    };
 
-    if (!String.prototype.format) {
-      String.prototype.format = function() {
-        let args = arguments;
-        return this.replace(/{(\d+)}/g, function(match, number) { 
-          return typeof args[number] != 'undefined'
-            ? args[number]
-            : match
-          ;
-        });
-      };
+    Date.prototype.addDays = function(days) {
+      var date = new Date(this.valueOf());
+      date.setDate(date.getDate() + days);
+      return date;
     }
+  }
+
+  componentDidMount = () => {
+    PushNotification.configure({    
+      onNotification: function({ foreground, userInteraction }) {
+        if (foreground && userInteraction) {
+          this.props.navigation.navigate("Running");
+        }
+      },
+      popInitialNotification: true,
+      requestPermissions: true
+    });
   }
 
   timeCheck = (time) => {
@@ -75,11 +91,13 @@ class NotifiersScreen extends Component {
   getTimeToAlarm = () => {
     let currentTime = new Date();
     let futureTime = new Date();
-    futureTime.setHours(Number(this.state.timeText.substr(0, 2)));
-    futureTime.setMinutes(Number(this.state.timeText.substr(3, 2)));
-    futureTime.setSeconds(0);
-    futureTime.setMilliseconds(0);
-    const difference = Math.floor((Date.UTC(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate()) - Date.UTC(futureTime.getFullYear(), futureTime.getMonth(), futureTime.getDate())) / 1000);  // in seconds
+    function dateDiffInSeconds(a, b) {
+      const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+      const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.floor((utc2 - utc1) / 1000);
+    }
+    futureTime.setHours(this.state.timeText.getHours(), this.state.timeText.getMinutes(), 0, 0);
+    let difference = dateDiffInSeconds(currentTime, futureTime);
     return {
       seconds: difference,
       minutes: difference / 60,
@@ -99,15 +117,28 @@ class NotifiersScreen extends Component {
         let newItem = this.state.notifiers[item];
         newItem.active = this.state.activeBool;
         newItem.description = this.state.descText;
-        newItem.time = this.state.timeText.toLocaleTimeString().slice(0, 5);
+        newItem.time = this.state.timeText;
         let objArray = this.state.notifiers;
         objArray[item] = newItem;
         this.setState({ notifiers: objArray, editVisible: false });
         return;
       }
     }
-    this.setState({ notifiers: [...this.state.notifiers, { time: this.state.timeText.toLocaleTimeString().slice(0, 5), description: this.state.descText, active: this.state.activeBool, id: ++counter }], editVisible: false });
-    ToastAndroid.show(this.props.screenProps.currentLang.labels.alarmSet.format(this.getTimeToAlarm().hours, this.getTimeToAlarm().minutes, this.getTimeToAlarm().seconds))
+    let seconds = this.getTimeToAlarm().seconds;
+    console.log(seconds, typeof seconds);
+    this.setState({ notifiers: [...this.state.notifiers, { time: this.state.timeText, description: this.state.descText, active: this.state.activeBool, id: ++counter }], editVisible: false });
+    PushNotification.localNotificationSchedule({
+      bigText: "Alarm has expired. Start running!",
+      vibrate: true,
+      vibration: 300,
+      ongoing: false,
+      title: "Sportsmart Alarm",
+      message: "Sportsmart",
+      playSound: true,
+      soundName: "android.resource://com.xyz/raw/sportsmart_notification.mp3",
+      date: new Date(Date.now() + seconds * 1000)
+    });
+    ToastAndroid.show(this.props.screenProps.currentLang.labels.alarmSet.toString().format(this.getTimeToAlarm().hours, this.getTimeToAlarm().minutes, this.getTimeToAlarm().seconds))
   }
 
   deleteItem = () => {
@@ -138,7 +169,7 @@ class NotifiersScreen extends Component {
                 }
               }}
             />
-            <Button onPress={() => this.setState({ datePickerVisible: true })} raised titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light, fontSize: 20 }} buttonStyle={{ backgroundColor: colors.light }} containerStyle={{ borderRadius: 5, borderColor: this.state.timeError ? colors.red : "#000", borderWidth: 1, marginTop: 30 }} title={this.timeCheck(this.state.timeText) ? this.state.timeText.toLocaleTimeString().substr(0, 5) : this.props.screenProps.currentLang.labels.time} iconRight icon={{type: "material-community", name: "clock", size: 24, color: colors.dark}} />
+            <Button onPress={() => this.setState({ datePickerVisible: true })} raised titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light, fontSize: 20 }} buttonStyle={{ backgroundColor: colors.light }} containerStyle={{ borderRadius: 5, borderColor: this.state.timeError ? colors.red : "#000", borderWidth: 1, marginTop: 30 }} title={this.timeCheck(this.state.timeText) ? this.state.timeText.toLocaleTimeString() : this.props.screenProps.currentLang.labels.time} iconRight icon={{type: "material-community", name: "clock", size: 24, color: colors.dark}} />
             {this.state.datePickerVisible && (<DateTimePicker
               value={this.state.timeText}
               mode="time"
@@ -218,7 +249,7 @@ class NotifiersScreen extends Component {
         <FAB
           style={{ backgroundColor: colors.red, color: colors.dark, position: "absolute", right: 30, bottom: 30 }}
           icon="plus"
-          onPress={() => this.setState({ editVisible: true, timeText: new Date(null), descText: "", activeBool: false, editing: -1 })}
+          onPress={() => {this.setState({ editVisible: true, timeText: new Date(null), descText: "", activeBool: false, editing: -1 }); PushNotification.requestPermissions([ "alert", "badge", "sound" ])}}
         />
       </>
     )

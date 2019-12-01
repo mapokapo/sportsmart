@@ -149,7 +149,9 @@ export default class App extends React.Component {
 
   componentDidMount = () => {
     AsyncStorage.getItem("sportsmartLanguage").then(item => {
-      if (item) this.setState({ currentLang: JSON.parse(item) });
+      if (item) {
+        if (Object.keys(JSON.parse(item).labels).length === Object.keys(this.state.currentLang).length) this.setState({ currentLang: JSON.parse(item) });
+      }
     });
   }
 
