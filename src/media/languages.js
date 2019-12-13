@@ -65,7 +65,7 @@ const languages = [
       description: "Description",
       finish: "Finish",
       delete: "Delete",
-      alarmSet: "Alarm set for {0} hour/s, {1} minute/s, and {2} second/s",
+      alarmSet: "Alarm set for {0} hour/s and {1} minute/s",
       distance: "Distance"
     }
   },
@@ -133,7 +133,7 @@ const languages = [
       description: "Opis",
       finish: "Završi",
       delete: "Izbriši",
-      alarmSet: "Vrijeme postavljeno za {0} sat/i, {1} minut/a, i {2} sekund/i.",
+      alarmSet: "Vrijeme postavljeno za {0} sat/i and {1} minut/a",
       distance: "Duljina"
     }
   }

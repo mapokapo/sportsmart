@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import AsyncStorage from "@react-native-community/async-storage";
 import { Text, View, FlatList, Switch, LayoutAnimation, UIManager, ToastAndroid } from "react-native";
 import { ListItem, Button } from "react-native-elements";
 import * as colors from "../../media/colors";
@@ -19,36 +20,15 @@ class NotifiersScreen extends Component {
       datePickerVisible: false,
       timeText: new Date(null),
       timeError: false,
+      itemID: -1,
       descText: "",
       activeBool: false,
-      notifiers: [
-        {
-          time: "12:37",
-          description: "Testest",
-          active: false,
-          id: ++counter
-        },
-        {
-          time: "18:00",
-          description: "Testest 2 3",
-          active: true,
-          id: ++counter
-        }
-      ]
+      notifiers: []
     };
 
     if (Platform.OS === "android") {
       UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
     }
-    String.prototype.format = function() {
-      let args = arguments;
-      return this.replace(/{(\d+)}/g, function(match, number) { 
-        return typeof args[number] != "undefined"
-          ? args[number]
-          : match
-        ;
-      });
-    };
 
     Date.prototype.addDays = function(days) {
       var date = new Date(this.valueOf());
@@ -58,6 +38,19 @@ class NotifiersScreen extends Component {
   }
 
   componentDidMount = () => {
+    AsyncStorage.getAllKeys((err1, keys) => {
+      for (let i = 0; i < keys.length; i++) {
+        if (keys[i].startsWith("sportsmart-notifs")) {
+          AsyncStorage.getItem(keys[i], (err2, value) => {
+            if (value) {
+              let data = JSON.parse(value);
+              data.time = new Date(data.time);
+              this.setState({ notifiers: [ ...this.state.notifiers, data ] });
+            }
+          })
+        }
+      }
+    })
     PushNotification.configure({    
       onNotification: function({ foreground, userInteraction }) {
         if (foreground && userInteraction) {
@@ -88,21 +81,36 @@ class NotifiersScreen extends Component {
     this.setState({ currentError: null });
   }
 
-  getTimeToAlarm = () => {
-    let currentTime = new Date();
-    let futureTime = new Date();
-    function dateDiffInSeconds(a, b) {
-      const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-      const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-      return Math.floor((utc2 - utc1) / 1000);
+  getTimeToAlarm = item => {
+    let now = Date.now();
+    let currentTime = new Date(now);
+    let futureTime = new Date(now);
+    if (item) {
+      futureTime.setHours(item.time.getHours(), item.time.getMinutes());
+    } else {
+      futureTime.setHours(this.state.timeText.getHours(), this.state.timeText.getMinutes());
     }
-    futureTime.setHours(this.state.timeText.getHours(), this.state.timeText.getMinutes(), 0, 0);
-    let difference = dateDiffInSeconds(currentTime, futureTime);
+    if (futureTime.getTime() < currentTime.getTime()) {
+      futureTime.setDate(futureTime.getDate() + 1);
+    }
+    let difference = (futureTime - currentTime) / 1000;
+    return Number(difference);
+  }
+
+  secondsToHms = d => {
+    d = Number(d);
+    const h = Math.floor(d / 3600);
+    const m = Math.floor(d % 3600 / 60);
+    const s = Math.floor(d % 3600 % 60);
+
+    const hDisplay = h > 0 ? h : "0";
+    const mDisplay = m > 0 ? m : "0";
+    const sDisplay = s > 0 ? s : "0";
     return {
-      seconds: difference,
-      minutes: difference / 60,
-      hours: difference / 3600
-    };
+      h: hDisplay,
+      m: mDisplay,
+      s: sDisplay
+    }; 
   }
 
   addItem = () => {
@@ -120,31 +128,95 @@ class NotifiersScreen extends Component {
         newItem.time = this.state.timeText;
         let objArray = this.state.notifiers;
         objArray[item] = newItem;
-        this.setState({ notifiers: objArray, editVisible: false });
+        this.setState({ notifiers: objArray, editVisible: false }, () => {
+          AsyncStorage.setItem("sportsmart-notifs" + this.state.itemID, JSON.stringify(newItem));
+          if (this.state.activeBool) {
+            let seconds = this.getTimeToAlarm();
+            setTimeout(() => {
+              PushNotification.localNotificationSchedule({
+                id: this.state.itemID,
+                number: 0,
+                userInfo: {
+                  id: this.state.itemID
+                },
+                bigText: "Alarm has expired. Start running!",
+                vibrate: true,
+                vibration: 300,
+                ongoing: false,
+                title: "Sportsmart Alarm",
+                message: "Sportsmart",
+                playSound: true,
+                soundName: "sportsmart_notification.mp3",
+                date: new Date(Date.now() + seconds * 1000)
+              });
+              String.prototype.format = function() {
+                let args = arguments;
+                return this.replace(/{(\d+)}/g, function(match, number) { 
+                  return typeof args[number] != "undefined"
+                    ? args[number]
+                    : match
+                  ;
+                });
+              };
+              let secsToTime = this.secondsToHms(seconds);
+              ToastAndroid.show(this.props.screenProps.currentLang.labels.alarmSet.toString().format(secsToTime.h, secsToTime.m), ToastAndroid.SHORT);
+            }, 500);
+          }
+        });
         return;
       }
     }
-    let seconds = this.getTimeToAlarm().seconds;
-    console.log(seconds, typeof seconds);
-    this.setState({ notifiers: [...this.state.notifiers, { time: this.state.timeText, description: this.state.descText, active: this.state.activeBool, id: ++counter }], editVisible: false });
-    PushNotification.localNotificationSchedule({
-      bigText: "Alarm has expired. Start running!",
-      vibrate: true,
-      vibration: 300,
-      ongoing: false,
-      title: "Sportsmart Alarm",
-      message: "Sportsmart",
-      playSound: true,
-      soundName: "android.resource://com.xyz/raw/sportsmart_notification.mp3",
-      date: new Date(Date.now() + seconds * 1000)
+    this.setState({ notifiers: [...this.state.notifiers, { itemID: this.state.itemID, time: this.state.timeText, description: this.state.descText, active: this.state.activeBool, id: ++counter }], editVisible: false }, () => {
+      AsyncStorage.setItem("sportsmart-notifs" + this.state.itemID, JSON.stringify({ id: this.state.itemID, time: this.state.timeText, description: this.state.descText, active: this.state.activeBool, id: ++counter }));
+      let seconds = this.getTimeToAlarm();
+      setTimeout(() => {
+        PushNotification.localNotificationSchedule({
+          id: this.state.itemID,
+          number: 0,
+          userInfo: {
+            id: this.state.itemID
+          },
+          bigText: "Alarm has expired. Start running!",
+          vibrate: true,
+          vibration: 300,
+          ongoing: false,
+          title: "Sportsmart Alarm",
+          message: "Sportsmart",
+          playSound: true,
+          soundName: "sportsmart_notification.mp3",
+          date: new Date(Date.now() + seconds * 1000)
+        });
+        String.prototype.format = function() {
+          let args = arguments;
+          return this.replace(/{(\d+)}/g, function(match, number) { 
+            return typeof args[number] != "undefined"
+              ? args[number]
+              : match
+            ;
+          });
+        };
+        let secsToTime = this.secondsToHms(seconds);
+        ToastAndroid.show(this.props.screenProps.currentLang.labels.alarmSet.toString().format(secsToTime.h, secsToTime.m), ToastAndroid.SHORT);
+      }, 500);
     });
-    ToastAndroid.show(this.props.screenProps.currentLang.labels.alarmSet.toString().format(this.getTimeToAlarm().hours, this.getTimeToAlarm().minutes, this.getTimeToAlarm().seconds))
   }
 
   deleteItem = () => {
     let newObj = this.state.notifiers;
+    function search(nameKey, prop, myArray){
+      for (let i=0; i < myArray.length; i++) {
+        if (myArray[i][prop] === nameKey) {
+            return myArray[i];
+        }
+      }
+    }
+    let delItem = search(this.state.editing, "id", this.state.notifiers);
+    PushNotification.cancelLocalNotifications({
+      id: delItem.itemID
+    });
     newObj = newObj.filter(obj => obj.id !== this.state.editing);
     this.setState({ notifiers: newObj, editVisible: false });
+    AsyncStorage.removeItem("sportsmart-notifs" + delItem.itemID);
   }
 
   render() {
@@ -169,16 +241,18 @@ class NotifiersScreen extends Component {
                 }
               }}
             />
-            <Button onPress={() => this.setState({ datePickerVisible: true })} raised titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light, fontSize: 20 }} buttonStyle={{ backgroundColor: colors.light }} containerStyle={{ borderRadius: 5, borderColor: this.state.timeError ? colors.red : "#000", borderWidth: 1, marginTop: 30 }} title={this.timeCheck(this.state.timeText) ? this.state.timeText.toLocaleTimeString() : this.props.screenProps.currentLang.labels.time} iconRight icon={{type: "material-community", name: "clock", size: 24, color: colors.dark}} />
+            <Button onPress={() => this.setState({ datePickerVisible: true })} raised titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light, fontSize: 20 }} buttonStyle={{ backgroundColor: colors.light }} containerStyle={{ borderRadius: 5, borderColor: this.state.timeError ? colors.red : "#000", borderWidth: 1, marginTop: 30 }} title={this.timeCheck(this.state.timeText) ? (this.state.timeText.getHours() < 10 ? "0" + this.state.timeText.getHours() : this.state.timeText.getHours()) + ":" + (this.state.timeText.getMinutes() < 10 ? "0" + this.state.timeText.getMinutes() : this.state.timeText.getMinutes()) : this.props.screenProps.currentLang.labels.time} iconRight icon={{type: "material-community", name: "clock", size: 24, color: colors.dark}} />
             {this.state.datePickerVisible && (<DateTimePicker
               value={this.state.timeText}
               mode="time"
               is24Hour={true}
               display="default"
               onChange={(event, date) => {
-                date.setSeconds(0);
-                date.setMilliseconds(0);
-                return event.type === "dismissed" ? this.setState({ datePickerVisible: false }) : this.setState({ timeText: date, datePickerVisible: false })
+                if (event.type !== "dismissed") {
+                  date.setSeconds(0);
+                  date.setMilliseconds(0);
+                  this.setState({ timeText: date, datePickerVisible: false })
+                } else this.setState({ datePickerVisible: false });
               }}
               onDismiss={() => this.setState({ datePickerVisible: false })}
             />)}
@@ -207,7 +281,7 @@ class NotifiersScreen extends Component {
             <ListItem
               leftIcon={{ name: "edit", color: colors.light, size: 36, containerStyle: { padding: 0, marginHorizontal: -5 } }}
               key={index}
-              title={item.time}
+              title={(Number(item.time.getHours()) < 10 ? "0" + item.time.getHours() : item.time.getHours()) + ":" + (item.time.getMinutes() < 10 ? "0" + item.time.getMinutes() : item.time.getMinutes())}
               titleStyle={{
                 color: colors.light,
                 fontSize: 36,
@@ -232,15 +306,52 @@ class NotifiersScreen extends Component {
                 thumbColor: item.active ? colors.red : colors.light,
                 trackColor: {false: "#333", true: "#a33"},
                 value: item.active,
-                onValueChange: value => this.setState(prevState => ({notifiers: prevState.notifiers.map((obj, objIndex) => (objIndex === index ? Object.assign(obj, { active: value }) : obj))}))
+                onValueChange: value => {
+                  this.setState(prevState => ({notifiers: prevState.notifiers.map((obj, objIndex) => (objIndex === index ? Object.assign(obj, { active: value }) : obj))}), () => {
+                    AsyncStorage.setItem("sportsmart-notifs" + item.itemID);
+                    if (value) {
+                      let seconds = this.getTimeToAlarm(item);
+                      PushNotification.localNotificationSchedule({
+                        bigText: "Alarm has expired. Start running!",
+                        number: 0,
+                        userInfo: {
+                          id: this.state.itemID
+                        },
+                        vibrate: true,
+                        vibration: 300,
+                        ongoing: false,
+                        title: "Sportsmart Alarm",
+                        message: "Sportsmart",
+                        playSound: true,
+                        soundName: "sportsmart_notification.mp3",
+                        date: new Date(Date.now() + seconds * 1000)
+                      });
+                      String.prototype.format = function() {
+                        let args = arguments;
+                        return this.replace(/{(\d+)}/g, function(match, number) { 
+                          return typeof args[number] != "undefined"
+                            ? args[number]
+                            : match
+                          ;
+                        });
+                      };
+                      let secsToTime = this.secondsToHms(seconds);
+                      ToastAndroid.show(this.props.screenProps.currentLang.labels.alarmSet.toString().format(secsToTime.h, secsToTime.m), ToastAndroid.SHORT);
+                    } else {
+                      PushNotification.cancelLocalNotifications({
+                        id: item.itemID
+                      })
+                    }
+                  });
+                }
               }}
               onPress={() => {
                 let time = new Date();
-                time.setHours(Number(item.time.substr(0, 2)));
-                time.setMinutes(Number(item.time.substr(3, 2)));
+                time.setHours(item.time.getHours());
+                time.setMinutes(item.time.getMinutes());
                 time.setSeconds(0);
                 time.setMilliseconds(0);
-                this.setState({ editVisible: true, timeText: time, descText: item.description, activeBool: item.active, editing: item.id });
+                this.setState({ editVisible: true, timeText: time, descText: item.description, activeBool: item.active, editing: item.id, itemID: item.itemID });
               }}
             />
           )}
@@ -248,8 +359,8 @@ class NotifiersScreen extends Component {
         />
         <FAB
           style={{ backgroundColor: colors.red, color: colors.dark, position: "absolute", right: 30, bottom: 30 }}
-          icon="plus"
-          onPress={() => {this.setState({ editVisible: true, timeText: new Date(null), descText: "", activeBool: false, editing: -1 }); PushNotification.requestPermissions([ "alert", "badge", "sound" ])}}
+          icon="add"
+          onPress={() => {this.setState({ editVisible: true, timeText: new Date(null), descText: "", activeBool: false, editing: -1, itemID: (Math.floor(Math.random() * 100)).toString() }); PushNotification.requestPermissions([ "alert", "badge", "sound" ])}}
         />
       </>
     )
