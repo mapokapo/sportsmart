@@ -60,7 +60,7 @@ export default class RunningScreen extends Component {
   
       return R * c;
     }
-    return haversine(this.state.position.startingCoords, newLatLng, { unit: this.state.userData.unit === "imperial" ? "mile" : "km" }) || 0;
+    return haversine(this.state.position.startingCoords, newLatLng, { unit: this.state.userData && this.state.userData.unit === "imperial" ? "mile" : "km" }) || 0;
   };
 
   requestLocationPermission = () => new Promise(async (resolve, reject) => {
@@ -110,6 +110,12 @@ export default class RunningScreen extends Component {
   }
 
   componentDidMount() {
+    this.unsubscribe = auth().onAuthStateChanged(async user => {
+      if (user && user.providerId === "firebase") {
+        let doc = await firestore().collection("users").doc(user.uid).get();
+        if (doc.exists) this.setState({ userData: doc.data() }, () => this.getCalories());
+      }
+    });
     BackgroundGeolocation.configure({
       desiredAccuracy: BackgroundGeolocation.HIGH_ACCURACY,
       debug: false,
@@ -146,12 +152,6 @@ export default class RunningScreen extends Component {
         }, 500);
         this.state.userData && this.state.isRunning && this.getCalories();
       });
-    });
-    this.unsubscribe = auth().onAuthStateChanged(async user => {
-      if (user && user.providerId === "firebase") {
-        let doc = await firestore().collection("users").doc(user.uid).get();
-        if (doc.exists) this.setState({ userData: doc.data() }, () => this.getCalories());
-      }
     });
     this.requestLocationPermission();
   }

@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { Text } from "react-native";
+import { Text, StatusBar } from "react-native";
 import AsyncStorage from "@react-native-community/async-storage";
 
 import { createAppContainer, createSwitchNavigator } from "react-navigation";
@@ -167,7 +167,10 @@ export default class App extends React.Component {
 
   render() {
     return (
-      <AppContainer screenProps={{ languages: this.state.languages, currentLang: this.state.currentLang, changeLanguage: this.changeLanguage }} />
+      <>
+        <StatusBar backgroundColor={colors.dark} barStyle="light-content" />
+        <AppContainer screenProps={{ languages: this.state.languages, currentLang: this.state.currentLang, changeLanguage: this.changeLanguage }} />
+      </>
     )
   }
 }
