@@ -25,12 +25,12 @@ This app tracks your step count, walking distance, calories/fat burned, weight l
 - [ ] (?) Implement admin/user management system (not likely since the app is mostly fixated on individual users improving themselves, and is not a social media app)
 
 # Screenshots from app:
-![Running Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/running.png?raw=true =270x480)
-![Notifiers Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/notifiers.png?raw=true =270x480)
-![Drawer Navigator](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/drawer.png?raw=true =270x480)
-![Login Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/login.png?raw=true =270x480)
-![Register Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/register.png?raw=true =270x480)
-![Reset Password Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/resetpass.png?raw=true =270x480)
+<img alt="Running Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/running.png?raw=true" width="270" height="480" />
+<img alt="Notifiers Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/notifiers.png?raw=true" width="270" height="480" />
+<img alt="Drawer Navigator" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/drawer.png?raw=true" width="270" height="480" />
+<img alt="Login Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/login.png?raw=true" width="270" height="480" />
+<img alt="Register Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/register.png?raw=true" width="270" height="480" />
+<img alt="Reset Password Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/resetpass.png?raw=true" width="270" height="480" />
 
 
 # How to run:
