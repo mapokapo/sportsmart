@@ -25,12 +25,12 @@ This app tracks your step count, walking distance, calories/fat burned, weight l
 - [ ] (?) Implement admin/user management system (not likely since the app is mostly fixated on individual users improving themselves, and is not a social media app)
 
 # Screenshots from app:
-![Running Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/running.png?raw=true)
-![Notifiers Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/notifiers.png?raw=true)
-![Drawer Navigator](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/drawer.png?raw=true)
-![Login Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/login.png?raw=true)
-![Register Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/register.png?raw=true)
-![Reset Password Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/resetpass.png?raw=true)
+![Running Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/running.png?raw=true =270x480)
+![Notifiers Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/notifiers.png?raw=true =270x480)
+![Drawer Navigator](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/drawer.png?raw=true =270x480)
+![Login Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/login.png?raw=true =270x480)
+![Register Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/register.png?raw=true =270x480)
+![Reset Password Screen](https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/resetpass.png?raw=true =270x480)
 
 
 # How to run:
