@@ -27,40 +27,39 @@ export default class DrawerComponent extends Component {
   }
 
   componentDidMount() {
-    this.unsubscribe = auth().onAuthStateChanged(user => {
+    this.unsubscribe = auth().onAuthStateChanged(async user => {
       if (user) {
-        firestore().collection("users").doc(user.uid).get().then(async doc => {
-          if (user.providerData[0].providerId === "facebook.com") {
-            const accessToken = await AccessToken.getCurrentAccessToken();
-            const name = user.displayName,
-              email = user.email,
-              profileImage = user.metadata.photoURL;
-            const infoRequest = new GraphRequest(
-              "/me",
-              {
-                accessToken: accessToken.accessToken,
-                parameters: {
-                  fields: {
-                    string: "picture.type(large)"
-                  }
+        if (user.providerData[0].providerId === "facebook.com") {
+          const accessToken = await AccessToken.getCurrentAccessToken();
+          const name = user.displayName,
+            email = user.email,
+            profileImage = user.metadata.photoURL;
+          const infoRequest = new GraphRequest(
+            "/me",
+            {
+              accessToken: accessToken.accessToken,
+              parameters: {
+                fields: {
+                  string: "picture.type(large)"
                 }
-              },
-              (err, res) => {
-                if (err) return;
-                this.setState({ user: { name, email, profileImage: res.picture.data.url } });
               }
-            );
+            },
+            (err, res) => {
+              if (err) return;
+              this.setState({ user: { name, email, profileImage: res.picture.data.url } });
+            }
+          );
 
-            new GraphRequestManager().addRequest(infoRequest).start();
-          } else if (user.providerData[0].providerId === "google.com") {
-            this.setState({ user: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
-          } else if (!doc.exists) {
-            ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
-          } else {
+          new GraphRequestManager().addRequest(infoRequest).start();
+        } else if (user.providerData[0].providerId === "google.com") {
+          this.setState({ user: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
+        } else {
+          firestore().collection("users").doc(user.uid).get().then(doc => {
+            if (!doc.exists) ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
             const { name, email, profileImage } = doc.data();
             this.setState({ user: { name, email, profileImage } });
-          }
-        });
+          });
+        }
       }
     });
   }

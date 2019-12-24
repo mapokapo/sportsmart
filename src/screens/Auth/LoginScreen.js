@@ -50,7 +50,8 @@ export default class LoginScreen extends Component {
     GoogleSignin.configure({
       webClientId: '373206170368-e8jrbu94tgslrel2h8ar0835pkc2jl37.apps.googleusercontent.com',
       offlineAccess: true,
-      forceConsentPrompt: true
+      forceConsentPrompt: true,
+      scopes: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"]
     });
   }
   
@@ -178,9 +179,10 @@ export default class LoginScreen extends Component {
                 if (result && data) {
                   const credential = auth.FacebookAuthProvider.credential(data.accessToken);
                   await auth().signInWithCredential(credential);
-                  this.props.navigation.navigate("App");
+                  this.setState({ loading: false }, () => {
+                    this.props.navigation.navigate("App");
+                  });
                 }
-                this.setState({ loading: false });
               });
             }}>
               <SocialIcon type="facebook" raised color={colors.dark} style={{ marginTop: 20, width: this.state.keyboardOpened ? 48 : 32, height: this.state.keyboardOpened ? 48 : 32 }} iconSize={this.state.keyboardOpened ? 24 : 16} />
@@ -192,7 +194,9 @@ export default class LoginScreen extends Component {
                   const userInfo = await GoogleSignin.signIn();
                   const credential = auth.GoogleAuthProvider.credential(userInfo.idToken, userInfo.accessToken);
                   await auth().signInWithCredential(credential);
-                  this.props.navigation.navigate("App");
+                  this.setState({ loading: false }, () => {
+                    this.props.navigation.navigate("App");
+                  });
                 } catch (error) {
                   if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
                     this.triggerDialog(this.props.screenProps.currentLang.errors.googlePlayServicesMissing);
@@ -200,8 +204,8 @@ export default class LoginScreen extends Component {
                   } else {
                     this.triggerDialog(this.props.screenProps.currentLang.errors.unhandledError + JSON.stringify(error));
                   }
+                  this.setState({ loading: false });
                 }
-                this.setState({ loading: false });
               });
             }}>
               <SocialIcon type="google" raised color={colors.dark} style={{ marginTop: 20, width: this.state.keyboardOpened ? 48 : 32, height: this.state.keyboardOpened ? 48 : 32 }} iconSize={this.state.keyboardOpened ? 24 : 16} />
@@ -242,6 +246,7 @@ export default class LoginScreen extends Component {
               label={this.props.screenProps.currentLang.labels.password}
               value={this.state.passText}
               returnKeyType="done"
+              onSubmitEditing={this.handleLogin}
               blurOnSubmit={false}
               onChangeText={text => this.setState({ passText: text, passError: false })}
               ref={this.login}

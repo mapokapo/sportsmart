@@ -23,7 +23,8 @@ const languages = [
       ageEmpty: "Please fill in the birth date field.",
       emailInUse: "That email is already in use. Please try again.",
       timeError: "Invalid time. Please try again.",
-      mapError: "Unknown error with location: \n\n"
+      mapError: "Unknown error with location: \n\n",
+      mapPermError: "You must allow location permissions to use maps."
     },
     labels: {
       error: "Error",
@@ -66,7 +67,11 @@ const languages = [
       finish: "Finish",
       delete: "Delete",
       alarmSet: "Alarm set for {0} hour/s and {1} minute/s",
-      distance: "Distance"
+      distance: "Distance",
+      months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+      activityPerMonth: "Monthly Activity",
+      gender: { male: "Male", female: "Female" },
+      noNotifiers: "You currently have no notifiers set."
     }
   },
   {
@@ -93,7 +98,8 @@ const languages = [
       ageEmpty: "Molimo vas da ispunite polje za datum rođenja",
       emailInUse: "Taj email je već u uporabi. Molimo vas pokušajte ponovo.",
       timeError: "Nevažeće vrijeme. Molimo pokušajte ponovo.",
-      mapError: "Nepoznata greška sa lokacijom: \n\n"
+      mapError: "Nepoznata greška sa lokacijom: \n\n",
+      mapPermError: "Morate dozvoliti pristup lokaciji da biste koristili mapu."
     },
     labels: {
       error: "Greška",
@@ -134,7 +140,11 @@ const languages = [
       finish: "Završi",
       delete: "Izbriši",
       alarmSet: "Vrijeme postavljeno za {0} sat/i and {1} minut/a",
-      distance: "Duljina"
+      distance: "Duljina",
+      months: ["Siječanj", "Veljača", "Ožujak", "Travanj", "Svibanj", "Lipanj", "Srpanj", "Kolovoz", "Rujan", "Listopad", "Studeni", "Prosinac"],
+      activityPerMonth: "Mjesečna aktivnost",
+      gender: { male: "Muško", female: "Žensko" },
+      noNotifiers: "Trenutno nemate nijednu obavijest postavljenu."
     }
   }
 ];

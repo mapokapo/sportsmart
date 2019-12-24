@@ -276,6 +276,7 @@ class NotifiersScreen extends Component {
             backgroundColor: colors.dark,
             paddingVertical: 5
           }}
+          ListEmptyComponent={<Text style={{ color: colors.light, fontSize: 18, textAlign: "center", opacity: 0.6, marginTop: 15 }}>{this.props.screenProps.currentLang.labels.noNotifiers}</Text>}
           data={this.state.notifiers}
           renderItem={({item, index}) => (
             <ListItem

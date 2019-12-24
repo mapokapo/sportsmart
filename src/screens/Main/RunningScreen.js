@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Dimensions, View, StyleSheet, ScrollView, PermissionsAndroid, Text, ToastAndroid } from "react-native";
+import { Dimensions, View, StyleSheet, ScrollView, PermissionsAndroid, Text, ToastAndroid, ActivityIndicator } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { Button } from "react-native-elements";
 import * as colors from "../../media/colors";
@@ -15,6 +15,7 @@ export default class RunningScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      permLoading: false,
       isRunning: false,
       userData: null,
       locationPermission: false,
@@ -65,6 +66,7 @@ export default class RunningScreen extends Component {
 
   requestLocationPermission = () => new Promise(async (resolve, reject) => {
     try {
+      this.setState({ permLoading: true });
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         {
@@ -73,7 +75,7 @@ export default class RunningScreen extends Component {
           buttonPositive: "OK",
         },
       );
-      this.setState({ locationPermission: granted === PermissionsAndroid.RESULTS.GRANTED }, () => {
+      this.setState({ permLoading: false, locationPermission: granted === PermissionsAndroid.RESULTS.GRANTED }, () => {
         resolve();
       });
     } catch (err) {
@@ -83,6 +85,7 @@ export default class RunningScreen extends Component {
 
   foregroundLocFetch = () => {
     this.foregroundWatch = Geolocation.watchPosition(position => {
+      console.log("line 88")
       let newCoordinate = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
@@ -110,10 +113,11 @@ export default class RunningScreen extends Component {
   }
 
   componentDidMount() {
+    this._mounted = true;
     this.unsubscribe = auth().onAuthStateChanged(async user => {
       if (user && user.providerId === "firebase") {
         let doc = await firestore().collection("users").doc(user.uid).get();
-        if (doc.exists) this.setState({ userData: doc.data() }, () => this.getCalories());
+        if (doc.exists) this.setState({ userData: doc.data() });
       }
     });
     BackgroundGeolocation.configure({
@@ -233,11 +237,34 @@ export default class RunningScreen extends Component {
       }
       const mets = getMets();
       let x = Math.round(((v / 24) * mets * (this.state.duration / 3600)) * 2) / 2; // kcal, rounded
-      this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2 });
+      this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2 }, async () => {
+        const doc = await firestore().collection("users").doc(this.state.userData.uid).get();
+        const mData = doc.data().data;  // modified data - array of objects that's about to change 
+        function dateDiffInDays(a, b) {
+          const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+          const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+          return Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
+        }
+        // store only last 5 months worth of info about activity, and also update last month with activity info
+        if (dateDiffInDays(new Date(mData[mData.length - 1].date), new Date()) > 30) {
+          let newObj = {
+            kjoules: mData[mData.length - 1].kjoules + this.state.kjoules,
+            date: new Date().toString()
+          };
+          mData.shift();
+          mData.push(newObj);
+        } else {
+          mData[mData.length - 1].kjoules += this.state.kjoules;
+        }
+        firestore().collection("users").doc(this.state.userData.uid).update({
+          data: mData
+        });
+      });
     }
   }
 
   componentWillUnmount = () => {
+    this._mounted = false;
     this.unsubscribe();
     Geolocation.clearWatch(this.watchID);
     BackgroundGeolocation.removeAllListeners();
@@ -253,14 +280,38 @@ export default class RunningScreen extends Component {
             {this.state.isRunning && (<Button title="STOP" onPress={() => this.stopRunning()} titleStyle={{ fontSize: 24 }} buttonStyle={{ backgroundColor: "rgba(255, 0, 0, 0.3)", paddingVertical: 8 }} containerStyle={{ flexGrow: 1 }} />)}
           </View>
         </View>)}
-        {this.state.locationPermission && (
+        {this.state.locationPermission && !this.state.permLoading ?
           <View style={{ width: screenWidth, height: screenWidth, flex: 1, zIndex: 0 }}>
             <MapView
               showsUserLocation
               followsUserLocation
               style={styles.map}
               ref={ref => this.map = ref}
-              onLayout={() => this.setState({ mapLoaded: true }, () => this.foregroundLocFetch())}
+              onLayout={() => this.setState({ mapLoaded: true }, () => {
+                Geolocation.getCurrentPosition(position => {
+                  let newCoordinate = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                  };
+                  this.setState({
+                    position: {
+                      lat: newCoordinate.latitude,
+                      long: newCoordinate.longitude,
+                      markerArray: [newCoordinate],
+                      distance: 0,
+                      startingCoords: newCoordinate
+                    }
+                  }, () => {
+                    this.map.animateToRegion({
+                      latitude: this.state.position.lat,
+                      longitude: this.state.position.long,
+                      latitudeDelta: 0.0922,
+                      longitudeDelta: 0.0421
+                    }, 500);
+                    this.state.userData && this.state.isRunning && this.getCalories();
+                  }, () => this.foregroundLocFetch());
+                })
+              })}
               initialRegion={{
                 latitude: this.state.position.lat,
                 longitude: this.state.position.long,
@@ -271,7 +322,8 @@ export default class RunningScreen extends Component {
               {this.state.isRunning && (<Marker coordinate={this.state.position.startingCoords} />)}
             </MapView>
           </View>
-        )}
+        :
+        (this.state.permLoading) ? <ActivityIndicator size="large" color={colors.dark} /> : <Text>{this.props.screenProps.currentLang.errors.mapPermError}</Text>}
         <View style={{ flexDirection: "column", flexGrow: 1, backgroundColor: colors.dark, height: screenHeight/3 }}>
           <View style={{ flex: 3, display: "flex", justifyContent: "center", alignItems: "center", borderBottomColor: colors.light, borderWidth: StyleSheet.hairlineWidth }}>
             <Text style={{ textAlign: "center", color: colors.light, fontSize: 38 }}>{this.formatTime(this.state.duration)}</Text>
@@ -287,12 +339,12 @@ export default class RunningScreen extends Component {
               <Text style={{ textAlign: "center", color: "#999", fontSize: 20 }}>{this.props.screenProps.currentLang.labels.kjoules}</Text>
             </View>
             <View style={{ flex: 1, borderLeftColor: colors.light, borderLeftWidth: StyleSheet.hairlineWidth, display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ textAlign: "center", color: colors.light, fontSize: 30 }}>{Math.round(this.state.position.distance * 100) / 100}</Text>
+              <Text style={{ textAlign: "center", color: colors.light, fontSize: 30 }}>{Math.round(this.state.position.distance * 100) / 100}{this.state.userData && this.state.userData.unit === "imperial" ? "mi" : "km"}</Text>
               <Text style={{ textAlign: "center", color: "#999", fontSize: 20 }}>{this.props.screenProps.currentLang.labels.distance}</Text>
             </View>
           </View>) : (<View style={{ flex: 2, display: "flex", flexDirection: "row" }}>
             <View style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", marginRight: "auto", marginLeft: "auto" }}>
-              <Text style={{ textAlign: "center", color: colors.light, fontSize: 30 }}>{Math.round(this.state.position.distance * 100) / 100}</Text>
+              <Text style={{ textAlign: "center", color: colors.light, fontSize: 30 }}>{Math.round(this.state.position.distance * 100) / 100}km</Text>
               <Text style={{ textAlign: "center", color: "#999", fontSize: 20 }}>{this.props.screenProps.currentLang.labels.distance}</Text>
             </View>
           </View>)}
