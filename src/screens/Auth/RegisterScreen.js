@@ -433,7 +433,7 @@ export default class RegisterScreen extends Component {
                 </Picker>
               </View>)}
               {!this.state.higherInputFocused && !this.state.lowerInputFocused && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 15, marginLeft: this.props.screenProps.currentLang.name !== "english" ? 15 : 5, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
-                <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>{this.props.screenProps.currentLang.labels.gender}</Text>
+                <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>{this.props.screenProps.currentLang.labels.genderText}</Text>
                 <Picker
                   mode="dropdown"
                   selectedValue={this.state.gender}
@@ -469,7 +469,7 @@ export default class RegisterScreen extends Component {
                 }}
               />
               <View style={{ position: "absolute", right: 7, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "M" : "IN"}</Text>
+                <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "CM" : "IN"}</Text>
               </View>
             </View>
             <View style={{ flex: 9, marginHorizontal: 5 }}>     

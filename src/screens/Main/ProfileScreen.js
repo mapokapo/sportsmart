@@ -15,6 +15,7 @@ export default class ProfileScreen extends Component {
     super(props);
     this.state = {
       userData: null,
+      iconClicked: false,
       data: {
         labels: [],
         datasets: [
@@ -73,7 +74,7 @@ export default class ProfileScreen extends Component {
               return;
             }
             const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
-            this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } });
+            this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
           });
         }
       } else {
@@ -81,7 +82,7 @@ export default class ProfileScreen extends Component {
       }
     });
     GoogleSignin.configure({
-      webClientId: '373206170368-e8jrbu94tgslrel2h8ar0835pkc2jl37.apps.googleusercontent.com',
+      webClientId: "373206170368-e8jrbu94tgslrel2h8ar0835pkc2jl37.apps.googleusercontent.com",
       offlineAccess: true,
       forceConsentPrompt: true
     });
@@ -93,6 +94,32 @@ export default class ProfileScreen extends Component {
 
   capitalize = (string) => {
     return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
+  refreshMonthyData = () => {
+    this.setState({ data: null, iconClicked: true }, () => {
+      const user = auth().currentUser;
+      getLastMonths = n => {
+        const months = this.props.screenProps.currentLang.labels.months;
+        let last_n_months = [];
+        const date = new Date();
+        for(let i = 0; i < n; i++){
+          last_n_months[i] = months[date.getMonth()];
+          date.setMonth(date.getMonth()-1);
+        }
+        last_n_months.reverse();
+        return last_n_months;
+      }
+      firestore().collection("users").doc(user.uid).get().then(doc => {
+        if (!doc.exists) {
+          ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
+          return;
+        }
+        const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
+        this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+        setTimeout(() => this.setState({ iconClicked: false }), 600);
+      });
+    });
   }
 
   render() {
@@ -130,8 +157,11 @@ export default class ProfileScreen extends Component {
                     <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10, borderRightColor: colors.dark, borderRightWidth: StyleSheet.hairlineWidth }}>{this.state.userData.weight}{this.state.userData.unit === "metric" ? "kg" : "lb"}</Text>
                     <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10 }}>{this.state.userData.height}{this.state.userData.unit === "metric" ? "cm" : "in"}</Text>
                   </View>
-                  {this.state.userData && this.state.data && (<View style={{ height: 220, width: screenWidth, elevation: 2 }}>
-                    <Text style={{ color: colors.light, fontSize: 32, textAlign: "center", marginTop: 15 }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
+                    <Text style={{ color: colors.light, fontSize: 32, textAlign: "center" }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
+                    <Icon name="refresh" onPress={() => this.refreshMonthyData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} /> 
+                  </View>
+                  {this.state.userData && this.state.data && !this.state.iconClicked ? (<View style={{ height: 220, width: screenWidth, elevation: 2 }}>
                     <LineChart
                       bezier
                       data={this.state.data}
@@ -152,7 +182,9 @@ export default class ProfileScreen extends Component {
                         color: (opacity = 1) => `rgba(216, 232, 240, ${opacity})`
                       }}
                     />
-                  </View>)}
+                  </View>) : (this.state.iconClicked === true ? <View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View> : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.light} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
+                  </View>))}
                 </View>
               </>)
             }

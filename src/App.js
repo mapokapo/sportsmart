@@ -155,10 +155,11 @@ export default class App extends React.Component {
     });
   }
 
-  changeLanguage = langStr => {
+  changeLanguage = (langStr, callback) => {
     this.state.languages.forEach(lang => {
       if (langStr === lang.name) {
         this.setState({ currentLang: lang }, () => {
+          if (callback) callback();
           AsyncStorage.setItem("sportsmartLanguage", JSON.stringify(lang));
         });
       }

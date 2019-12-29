@@ -29,7 +29,8 @@ export default class RunningScreen extends Component {
         startingCoords: {}
       },
       kcal: 0,
-      kjoules: 0
+      kjoules: 0,
+      prevKj: 0
     };
   }
 
@@ -85,7 +86,6 @@ export default class RunningScreen extends Component {
 
   foregroundLocFetch = () => {
     this.foregroundWatch = Geolocation.watchPosition(position => {
-      console.log("line 88")
       let newCoordinate = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
@@ -237,24 +237,31 @@ export default class RunningScreen extends Component {
       }
       const mets = getMets();
       let x = Math.round(((v / 24) * mets * (this.state.duration / 3600)) * 2) / 2; // kcal, rounded
-      this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2 }, async () => {
+      this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2, prevKj: this.state.kjoules }, async () => {
         const doc = await firestore().collection("users").doc(this.state.userData.uid).get();
-        const mData = doc.data().data;  // modified data - array of objects that's about to change 
+        const mData = doc.data().data || [];  // modified data - array of objects that's about to change 
         function dateDiffInDays(a, b) {
           const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
           const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
           return Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
         }
         // store only last 5 months worth of info about activity, and also update last month with activity info
+        if (mData.length === 0) {
+          let newObj = {
+            kjoules: this.state.kjoules,
+            date: new Date().toString()
+          };
+          mData.push(newObj);
+        }
         if (dateDiffInDays(new Date(mData[mData.length - 1].date), new Date()) > 30) {
           let newObj = {
-            kjoules: mData[mData.length - 1].kjoules + this.state.kjoules,
+            kjoules: mData[mData.length - 1].kjoules + (this.state.kjoules - this.state.prevKj),
             date: new Date().toString()
           };
           mData.shift();
           mData.push(newObj);
         } else {
-          mData[mData.length - 1].kjoules += this.state.kjoules;
+          mData[mData.length - 1].kjoules += (this.state.kjoules - this.state.prevKj);
         }
         firestore().collection("users").doc(this.state.userData.uid).update({
           data: mData

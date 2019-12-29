@@ -24,7 +24,9 @@ const languages = [
       emailInUse: "That email is already in use. Please try again.",
       timeError: "Invalid time. Please try again.",
       mapError: "Unknown error with location: \n\n",
-      mapPermError: "You must allow location permissions to use maps."
+      mapPermError: "You must allow location permissions to use maps.",
+      passIncorrect: "Incorrect password.",
+      tooManyAttempts: "Too many password attempts. Try again later."
     },
     labels: {
       error: "Error",
@@ -52,6 +54,7 @@ const languages = [
       height: "Height",
       weight: "Weight",
       login: "Login",
+      logOut: "Log Out",
       register: "Register",
       resetPass: "Reset Password",
       signOut: "Sign Out",
@@ -59,7 +62,7 @@ const languages = [
       kjoules: "Kilojoules",
       male: "Male",
       female: "Female",
-      gender: "Gender",
+      genderText: "Gender",
       pause: "Pause",
       createNotifier: "Edit Notifier",
       time: "Set the time",
@@ -71,7 +74,17 @@ const languages = [
       months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
       activityPerMonth: "Monthly Activity",
       gender: { male: "Male", female: "Female" },
-      noNotifiers: "You currently have no notifiers set."
+      noNotifiers: "You currently have no notifiers set.",
+      changeLanguage: "Change language",
+      language: "Language",
+      disableAllNotifs: "Delete all notifiers",
+      notifsDeleted: "Deleted {0} notifiers",
+      deleteAccount: "Delete Account",
+      confirmDeletion: "Additional confirmation needed",
+      confirmDeletionText: "In order to make sure you want to delete your account, you need to input your password below.",
+      createdBy: "Created by Leo Petrovic",
+      noData1: "No data. Go to the ",
+      noData2: " 'Running' screen to get statistics about your activity."
     }
   },
   {
@@ -88,7 +101,7 @@ const languages = [
       heightInvalid: "Nevažeća visina. Molimo vas pokušajte ponovo.",
       weightEmpty: "Molimo vas da ispunite polje za težinu.",
       weightInvalid: "Nevažeća težina. Molimo vas pokušajte ponovo.",
-      userNotFound: "Taj korisnik ne postoji.",
+      userNotFound: "Taj korisnik nije pronađen.",
       networkError: "Pogreška sa mrežom, molimo vas pokušajte ponovo.",
       unhandledError: "Nepoznata pogreška: \n\n",
       googlePlayServicesMissing: "Pogreška u prijavi. Molimo vas ažurirajte Google Play Services",
@@ -99,7 +112,9 @@ const languages = [
       emailInUse: "Taj email je već u uporabi. Molimo vas pokušajte ponovo.",
       timeError: "Nevažeće vrijeme. Molimo pokušajte ponovo.",
       mapError: "Nepoznata greška sa lokacijom: \n\n",
-      mapPermError: "Morate dozvoliti pristup lokaciji da biste koristili mapu."
+      mapPermError: "Morate dozvoliti pristup lokaciji da biste koristili mapu.",
+      passIncorrect: "Netočna lozinka.",
+      tooManyAttempts: "Previše pokušaja za upis lozinke. Pokušajte ponovo kasnije."
     },
     labels: {
       error: "Greška",
@@ -125,6 +140,7 @@ const languages = [
       height: "Visina",
       weight: "Težina",
       login: "Prijava",
+      logOut: "Odjavi se",
       register: "Registriraj se",
       resetPass: "Promjeni lozinku",
       signOut: "Odjavi se",
@@ -132,7 +148,6 @@ const languages = [
       kjoules: "Kilodžuli",
       male: "Muško",
       female: "Žensko",
-      gender: "Spol",
       pause: "Pauza",
       createNotifier: "Namjesti obavijest",
       time: "Namjesti vrijeme",
@@ -144,7 +159,18 @@ const languages = [
       months: ["Siječanj", "Veljača", "Ožujak", "Travanj", "Svibanj", "Lipanj", "Srpanj", "Kolovoz", "Rujan", "Listopad", "Studeni", "Prosinac"],
       activityPerMonth: "Mjesečna aktivnost",
       gender: { male: "Muško", female: "Žensko" },
-      noNotifiers: "Trenutno nemate nijednu obavijest postavljenu."
+      genderText: "Spol",
+      noNotifiers: "Trenutno nemate nijednu obavijest postavljenu.",
+      changeLanguage: "Promijenite jezik",
+      language: "Jezik",
+      disableAllNotifs: "Izbriši sve obavijesti",
+      notifsDeleted: "{0} obavijesti izbrisano",
+      deleteAccount: "Izbriši Račun",
+      confirmDeletion: "Dodatna potvrda je potrebna",
+      confirmDeletionText: "Da bi bili sigurni da želite izbrisati svoj račun, morate unijeti lozinku.",
+      createdBy: "Napravio - Leo Petrović",
+      noData1: "Nema podataka. Idite na ",
+      noData2: " 'Trening' da bi skupili statistike o svojoj aktivnosti."
     }
   }
 ];
