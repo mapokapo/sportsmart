@@ -85,7 +85,10 @@ export default class SettingsScreen extends Component {
           iconColor: colors.red,
           dangerous: true,
           onClick: () => {
-            this.setState({ modalVisible: true, modalContent: "delAcc" })
+            if (auth().currentUser.providerData[0].providerId !== "facebook.com" && auth().currentUser.providerData[0].providerId !== "google.com")
+              this.setState({ modalVisible: true, modalContent: "delAcc" })
+            else
+              ToastAndroid.show(this.state.currentLang.errors.thirdPartyPassResetError, ToastAndroid.LONG);
           }
         }
       ]

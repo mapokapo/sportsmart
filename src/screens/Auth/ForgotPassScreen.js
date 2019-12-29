@@ -61,7 +61,7 @@ export default class ForgotPassScreen extends Component {
         });
       } else if (methods.indexOf("password") === -1) {
         this.setState({ emailError: true }, () => {
-          this.triggerError(this.state.currentLang.errors.facebookResetPassError, 5);
+          this.triggerError(this.state.currentLang.errors.thirdPartyPassResetError, 5);
         });
       } else {
         auth().sendPasswordResetEmail(this.state.emailText);

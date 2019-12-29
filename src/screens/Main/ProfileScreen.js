@@ -138,56 +138,56 @@ export default class ProfileScreen extends Component {
                     containerStyle={{ overflow: "hidden", borderRadius: 160/2, elevation: 1, width: 160, height: 160 }}
                   />
                 </View>
-                {this.state.userData.gender && (<View style={{ flex: 1, justifyContent: "center"}}>
+                <View style={{ flex: 1, justifyContent: "center"}}>
                   <Text style={styles.profileTextBig}>{this.state.userData.name}</Text>
                   <Text style={styles.profileText}>{this.state.userData.email}</Text>
                   <Text style={styles.profileText}>{this.state.userData.born}</Text>
                   <View style={{ flexDirection: "row" }}><Icon type="material-community" name="medal" size={30} color="gold" /></View>
-                </View>)}
+                </View>
               </>)
             }
           </View>
           {this.state.userData === null ? 
-              <ActivityIndicator size="large" color={colors.dark} />
-              :
-              (<>
-                <View style={{ flex: 2, backgroundColor: colors.dark }}>
-                  <View style={{ width: "100%", backgroundColor: colors.light, display: "flex", flexDirection: "row", justifyContent: "space-evenly", alignItems: "center" }}>
-                    <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10, borderRightColor: colors.dark, borderRightWidth: StyleSheet.hairlineWidth }}>{this.props.screenProps.currentLang.labels.gender[this.state.userData.gender]}</Text>
-                    <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10, borderRightColor: colors.dark, borderRightWidth: StyleSheet.hairlineWidth }}>{this.state.userData.weight}{this.state.userData.unit === "metric" ? "kg" : "lb"}</Text>
-                    <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10 }}>{this.state.userData.height}{this.state.userData.unit === "metric" ? "cm" : "in"}</Text>
-                  </View>
-                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
-                    <Text style={{ color: colors.light, fontSize: 32, textAlign: "center" }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
-                    <Icon name="refresh" onPress={() => this.refreshMonthyData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} /> 
-                  </View>
-                  {this.state.userData && this.state.data && !this.state.iconClicked ? (<View style={{ height: 220, width: screenWidth, elevation: 2 }}>
-                    <LineChart
-                      bezier
-                      data={this.state.data}
-                      width={screenWidth}
-                      height={220}
-                      style={{ borderRadius: 10, margin: 15 }}
-                      getDotProps={(data, index) => {
-                        return {
-                          r: 5,
-                          fill: index === 4 ? "rgba(243, 54, 54, 1)" : "rgba(216, 232, 240, 0.85)"
-                        };
-                      }}
-                      chartConfig={{
-                        backgroundGradientFrom: colors.blue,
-                        backgroundGradientFromOpacity: 0.05,
-                        backgroundGradientTo: colors.dark,
-                        backgroundGradientToOpacity: 1,
-                        color: (opacity = 1) => `rgba(216, 232, 240, ${opacity})`
-                      }}
-                    />
-                  </View>) : (this.state.iconClicked === true ? <View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View> : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.light} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
-                  </View>))}
+            <ActivityIndicator size="large" color={colors.dark} />
+            :
+            (<>
+              <View style={{ flex: 2, backgroundColor: colors.dark }}>
+                {this.state.userData.gender && (<View style={{ width: "100%", backgroundColor: colors.light, display: "flex", flexDirection: "row", justifyContent: "space-evenly", alignItems: "center" }}>
+                  <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10, borderRightColor: colors.dark, borderRightWidth: StyleSheet.hairlineWidth }}>{this.props.screenProps.currentLang.labels.gender[this.state.userData.gender]}</Text>
+                  <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10, borderRightColor: colors.dark, borderRightWidth: StyleSheet.hairlineWidth }}>{this.state.userData.weight}{this.state.userData.unit === "metric" ? "kg" : "lb"}</Text>
+                  <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10 }}>{this.state.userData.height}{this.state.userData.unit === "metric" ? "cm" : "in"}</Text>
+                </View>)}
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
+                  <Text style={{ color: colors.light, fontSize: 32, textAlign: "center" }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
+                  <Icon name="refresh" onPress={() => this.refreshMonthyData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />
                 </View>
-              </>)
-            }
+                {this.state.userData && this.state.data && !this.state.iconClicked ? (<View style={{ height: 220, width: screenWidth, elevation: 2 }}>
+                  <LineChart
+                    bezier
+                    data={this.state.data}
+                    width={screenWidth}
+                    height={220}
+                    style={{ borderRadius: 10, margin: 15 }}
+                    getDotProps={(data, index) => {
+                      return {
+                        r: 5,
+                        fill: index === 4 ? "rgba(243, 54, 54, 1)" : "rgba(216, 232, 240, 0.85)"
+                      };
+                    }}
+                    chartConfig={{
+                      backgroundGradientFrom: colors.blue,
+                      backgroundGradientFromOpacity: 0.05,
+                      backgroundGradientTo: colors.dark,
+                      backgroundGradientToOpacity: 1,
+                      color: (opacity = 1) => `rgba(216, 232, 240, ${opacity})`
+                    }}
+                  />
+                </View>) : (this.state.iconClicked === true ? <View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View> : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.light} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
+                </View>))}
+              </View>
+            </>)
+          }
         </View>
       </ScrollView>
     )
