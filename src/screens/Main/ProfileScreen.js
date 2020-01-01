@@ -1,11 +1,12 @@
 import React, { Component } from "react"
-import { Text, View, ScrollView, ActivityIndicator, Dimensions, StyleSheet } from "react-native"
+import { Text, View, ScrollView, ActivityIndicator, Dimensions, StyleSheet, ToastAndroid } from "react-native"
 import { Image, Icon } from "react-native-elements";
+import { ProgressBar } from "react-native-paper";
 import * as colors from "../../media/colors";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { GoogleSignin } from "@react-native-community/google-signin";
-import { GraphRequest, GraphRequestManager, AccessToken } from "react-native-fbsdk";
+import { GraphRequest, GraphRequestManager } from "react-native-fbsdk";
 import { LineChart } from "react-native-chart-kit";
 
 const screenWidth = Math.round(Dimensions.get("window").width);
@@ -16,48 +17,28 @@ export default class ProfileScreen extends Component {
     this.state = {
       userData: null,
       iconClicked: false,
-      data: {
-        labels: [],
-        datasets: [
-          {
-            data: []
-          }
-        ]
-      }
+      data: undefined,
+      medals: []
     };
   }
 
   componentDidMount = () => {
     this.unsubscribe = auth().onAuthStateChanged(async user => {
       if (user) {
-        if (user.providerData[0].providerId === "facebook.com") {
-          const accessToken = await AccessToken.getCurrentAccessToken();
-          const name = user.displayName,
-            email = user.email,
-            profileImage = user.metadata.photoURL;
+        if (user.providerId === "facebook.com") {
           const infoRequest = new GraphRequest(
-            "/me",
-            {
-              accessToken: accessToken.accessToken,
-              parameters: {
-                fields: {
-                  string: "picture.type(large)"
-                }
-              }
-            },
+            "/me?fields=name,email,picture.type(large)",
+            null,
             (err, res) => {
               if (err) return;
-              console.log("fb res - " + res);
-              this.setState({ userData: { name, email, profileImage: res.picture.data.url } });
+              this.setState({ userData: { name: res.name, email: res.email, profileImage: res.picture.data.url } });
             }
           );
-
           new GraphRequestManager().addRequest(infoRequest).start();
-        } else if (user.providerData[0].providerId === "google.com") {
-          console.log("google res - " + user);
+        } else if (user.providerId === "google.com") {
           this.setState({ userData: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
         } else {
-          getLastMonths = n => {
+          let getLastMonths = n => {
             const months = this.props.screenProps.currentLang.labels.months;
             let last_n_months = [];
             const date = new Date();
@@ -74,6 +55,11 @@ export default class ProfileScreen extends Component {
               return;
             }
             const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
+            const activity = data.map(({ kjoules }) => kjoules);
+            if (activity[activity.length - 1] > 10000) {
+              const total = activity[activity.length - 1];
+              this.setState({ medals: [ ...this.state.medals, { type: "monthly-activity", value: total } ] });
+            }
             this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
           });
         }
@@ -99,7 +85,7 @@ export default class ProfileScreen extends Component {
   refreshMonthyData = () => {
     this.setState({ data: null, iconClicked: true }, () => {
       const user = auth().currentUser;
-      getLastMonths = n => {
+      let getLastMonths = n => {
         const months = this.props.screenProps.currentLang.labels.months;
         let last_n_months = [];
         const date = new Date();
@@ -134,15 +120,15 @@ export default class ProfileScreen extends Component {
                 <View style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Image
                     source={{ uri: this.state.userData.profileImage }}
-                    style={{ width: 160, height: 160 }}
-                    containerStyle={{ overflow: "hidden", borderRadius: 160/2, elevation: 1, width: 160, height: 160 }}
+                    style={{ width: 140, height: 140 }}
+                    containerStyle={{ overflow: "hidden", borderRadius: 140/2, elevation: 1, width: 140, height: 140 }}
                   />
                 </View>
                 <View style={{ flex: 1, justifyContent: "center"}}>
                   <Text style={styles.profileTextBig}>{this.state.userData.name}</Text>
                   <Text style={styles.profileText}>{this.state.userData.email}</Text>
-                  <Text style={styles.profileText}>{this.state.userData.born}</Text>
-                  <View style={{ flexDirection: "row" }}><Icon type="material-community" name="medal" size={30} color="gold" /></View>
+                  {this.state.userData.born && (<Text style={styles.profileText}>{this.state.userData.born}</Text>)}
+              <View style={{ flexDirection: "row" }}>{this.state.medals.map((medal, index) => <Icon key={index} type="material-community" name="medal" size={30} color={medal.type === "monthly-activity" ? colors.red : "gold"} />)}</View>
                 </View>
               </>)
             }
@@ -157,10 +143,15 @@ export default class ProfileScreen extends Component {
                   <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10, borderRightColor: colors.dark, borderRightWidth: StyleSheet.hairlineWidth }}>{this.state.userData.weight}{this.state.userData.unit === "metric" ? "kg" : "lb"}</Text>
                   <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10 }}>{this.state.userData.height}{this.state.userData.unit === "metric" ? "cm" : "in"}</Text>
                 </View>)}
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
-                  <Text style={{ color: colors.light, fontSize: 32, textAlign: "center" }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
-                  <Icon name="refresh" onPress={() => this.refreshMonthyData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />
-                </View>
+                {this.state.userData && this.state.data && !this.state.iconClicked ? (<View style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
+                  <Text style={{ color: colors.light, fontSize: 28, textAlign: "center", marginBottom: -12, marginTop: -10 }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
+                  <ProgressBar color={colors.red} progress={this.state.userData.data[this.state.userData.data.length - 1].kjoules / 10000} style={{ width: screenWidth/1.5, marginBottom: -15 }} />
+                  {this.state.userData.gender && (<Icon name="refresh" onPress={() => this.refreshMonthyData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />)}
+                </View>) : (this.state.iconClicked === true ? (<View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View>) : (this.state.userData.gender ? (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.light} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
+                </View>) : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center", paddingHorizontal: 15 }}>
+                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.errors.thirdPartyPassResetError}</Text>
+                </View>)))}
                 {this.state.userData && this.state.data && !this.state.iconClicked ? (<View style={{ height: 220, width: screenWidth, elevation: 2 }}>
                   <LineChart
                     bezier
@@ -182,9 +173,11 @@ export default class ProfileScreen extends Component {
                       color: (opacity = 1) => `rgba(216, 232, 240, ${opacity})`
                     }}
                   />
-                </View>) : (this.state.iconClicked === true ? <View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View> : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
+                </View>) : (this.state.iconClicked === true ? (<View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View>) : (this.state.userData.gender ? (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.light} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
-                </View>))}
+                </View>) : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center", paddingHorizontal: 15 }}>
+                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.errors.thirdPartyPassResetError}</Text>
+                </View>)))}
               </View>
             </>)
           }
@@ -194,10 +187,6 @@ export default class ProfileScreen extends Component {
   }
 }
 
-const scale = (num, in_min, in_max, out_min, out_max) => {
-  return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
 const styles = StyleSheet.create({
   profileTextBig: {
     color: colors.dark,
@@ -205,7 +194,7 @@ const styles = StyleSheet.create({
   },
   profileText: {
     color: colors.dark,
-    fontSize: 24,
+    fontSize: 16,
     opacity: 0.75
   }
 })

@@ -85,7 +85,6 @@ const BottomTabNavigator = createStackNavigator({
 const DrawerNavigator = createDrawerNavigator({
   Tabs: BottomTabNavigator,
   Together: TogetherScreen,
-  Activity: ActivityScreen,
   Statistics: StatisticsScreen,
   Settings: SettingsScreen,
   Support: SupportScreen
@@ -115,12 +114,19 @@ const AuthStack = createStackNavigator({
   },
   ForgotPass: {
     screen: ForgotPassScreen,
-    navigationOptions: ({ screenProps }) => ({
+    navigationOptions: ({ navigation, screenProps }) => ({
       headerTintColor: colors.light,
       headerStyle: {
         backgroundColor: colors.dark
       },
-      headerTitle: screenProps.currentLang.labels.resetPass
+      headerTitle: screenProps.currentLang.labels.resetPass,
+      headerLeft: <Icon name="arrow-back" color={colors.light} size={24} containerStyle={{ marginLeft: 15 }} onPress={ () => {
+        if (navigation.state.params && navigation.state.params.from === "settings") {
+          navigation.navigate("Settings");
+        } else {
+          navigation.goBack();
+        }
+      } }  />
     })
   }
 }, {

@@ -178,10 +178,23 @@ export default class LoginScreen extends Component {
                 const data = await AccessToken.getCurrentAccessToken();
                 if (result && data) {
                   const credential = auth.FacebookAuthProvider.credential(data.accessToken);
-                  await auth().signInWithCredential(credential);
-                  this.setState({ loading: false }, () => {
-                    this.props.navigation.navigate("App");
+                  auth().signInWithCredential(credential).then(() => {
+                    this.setState({ loading: false }, () => {
+                      this.props.navigation.navigate("App");
+                    });
+                  }).catch(err => {
+                    if (err.code === "auth/account-exists-with-different-credential") {
+                      this.setState({ loading: false }, () => {
+                        this.triggerDialog(this.props.screenProps.currentLang.errors.thirdPartyLoginError);
+                      });
+                    } else {
+                      this.setState({ loading: false }, () => {
+                        this.triggerDialog(this.props.screenProps.currentLang.errors.unhandledError + err);
+                      });
+                    }
                   });
+                } else {
+                  this.setState({ loading: false });
                 }
               });
             }}>
@@ -262,7 +275,7 @@ export default class LoginScreen extends Component {
             />
             <View style={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row" }}>
               <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.props.screenProps.currentLang.labels.registerText}</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.props.screenProps.currentLang.labels.resetPass}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.props.screenProps.currentLang.labels.resetPassText}</Text></TouchableOpacity>
             </View>
           </View>
           {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}

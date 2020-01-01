@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Text, View, StyleSheet, LayoutAnimation, UIManager } from "react-native";
+import { Text, View, StyleSheet, LayoutAnimation, UIManager, Keyboard } from "react-native";
 import * as colors from "../../media/colors";
 import { TextInput } from "react-native-paper";
 import { Button } from "react-native-elements";
@@ -14,17 +14,16 @@ export default class ForgotPassScreen extends Component {
       loading: false,
       currentError: null,
       currentTimeout: null,
-      currentLang: this.props.screenProps.currentLang
+      buttonBottomMargin: 0
     };
 
     if (Platform.OS === "android") {
       UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }
-
   triggerError = (msg, duration) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-    this.setState({ currentError: msg }, () => {
+    this.setState({ currentError: msg, buttonBottomMargin: -20 }, () => {
       if (this.state.currentTimeout !== null) {
         clearTimeout(this.state.currentTimeout);
       }
@@ -34,7 +33,7 @@ export default class ForgotPassScreen extends Component {
 
   hideError = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-    this.setState({ currentError: null });
+    this.setState({ currentError: null, buttonBottomMargin: 0 });
   }
 
   emailCheck = (text) => {
@@ -44,24 +43,24 @@ export default class ForgotPassScreen extends Component {
   handleResetPass = () => {
     if (this.state.emailText === "") {
       this.setState({ emailError: true }, () => {
-        this.triggerError(this.state.currentLang.errors.emailEmpty);
+        this.triggerError(this.props.screenProps.currentLang.errors.emailEmpty);
       });
       return;
     }
     if (!this.emailCheck(this.state.emailText)) {
       this.setState({ emailError: true }, () => {
-        this.triggerError(this.state.currentLang.errors.emailInvalid);
+        this.triggerError(this.props.screenProps.currentLang.errors.emailInvalid);
       })
       return;
     }
     auth().fetchSignInMethodsForEmail(this.state.emailText).then(methods => {
       if (methods.length === 0) {
         this.setState({ emailError: true }, () => {
-          this.triggerError(this.state.currentLang.errors.userNotFound);
+          this.triggerError(this.props.screenProps.currentLang.errors.userNotFound);
         });
       } else if (methods.indexOf("password") === -1) {
         this.setState({ emailError: true }, () => {
-          this.triggerError(this.state.currentLang.errors.thirdPartyPassResetError, 5);
+          this.triggerError(this.props.screenProps.currentLang.errors.thirdPartyPassResetError, 5);
         });
       } else {
         auth().sendPasswordResetEmail(this.state.emailText);
@@ -72,14 +71,14 @@ export default class ForgotPassScreen extends Component {
   render() {
     return (
       <View style={styles.mainWrapper}>
-        <Text style={{ color: colors.dark, fontSize: 18 }}>{this.state.currentLang.labels.resetPassScreenText}</Text>
+        <Text style={{ color: colors.dark, fontSize: 18 }}>{this.props.screenProps.currentLang.labels.resetPassScreenText}</Text>
         <TextInput
           keyboardType="email-address"
           textContentType="emailAddress"
           error={this.state.emailError}
           style={{ marginTop: 5 }}
           mode="flat"
-          label={this.state.currentLang.labels.email}
+          label={this.props.screenProps.currentLang.labels.email}
           value={this.state.emailText}
           onChangeText={text => this.setState({ emailText: text, emailError: false })}
           onFocus={() => this.setState({ emailError: false, keyboardOpened: true })}
@@ -92,10 +91,10 @@ export default class ForgotPassScreen extends Component {
         />
         {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
         <Button
-          containerStyle={{ marginTop: "auto" }}
+          containerStyle={{ marginTop: "auto", marginBottom: this.state.buttonBottomMargin }}
           titleStyle={{ color: colors.light }}
           buttonStyle={{ backgroundColor: colors.dark }}
-          title={this.state.currentLang.labels.resetPass}
+          title={this.props.screenProps.currentLang.labels.resetPass}
           type="solid"
           raised
           loading={this.state.loading}
@@ -120,6 +119,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: "auto",
     marginTop: "auto",
-    lineHeight: 15
+    lineHeight: 15,
+    minHeight: 20
   }
 });

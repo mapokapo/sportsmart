@@ -9,6 +9,7 @@ import PushNotification from "react-native-push-notification";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
+import { StackActions } from "react-navigation";
 
 export default class SettingsScreen extends Component {
   constructor(props) {
@@ -69,6 +70,24 @@ export default class SettingsScreen extends Component {
           }
         },
         {
+          title: props.screenProps.currentLang.labels.resetPass,
+          icon: "lock",
+          iconColor: colors.blue,
+          opacity: auth().currentUser.providerId === "firebase" ? 1 : 0.5,
+          onClick: () => {
+            if (auth().currentUser.providerId === "firebase") {
+              const action = StackActions.push({
+                routeName: "ForgotPass",
+                params: {
+                  from: "settings"
+                }
+              });
+              this.props.navigation.dispatch(action);
+            } else
+              ToastAndroid.show(props.screenProps.currentLang.errors.thirdPartyPassResetError, ToastAndroid.LONG);
+          }
+        },
+        {
           title: props.screenProps.currentLang.labels.logOut,
           icon: "keyboard-return",
           iconColor: colors.red,
@@ -83,12 +102,13 @@ export default class SettingsScreen extends Component {
           title: props.screenProps.currentLang.labels.deleteAccount,
           icon: "delete",
           iconColor: colors.red,
+          opacity: auth().currentUser.providerId === "firebase" ? 1 : 0.5,
           dangerous: true,
           onClick: () => {
-            if (auth().currentUser.providerData[0].providerId !== "facebook.com" && auth().currentUser.providerData[0].providerId !== "google.com")
+            if (auth().currentUser.providerId === "firebase")
               this.setState({ modalVisible: true, modalContent: "delAcc" })
             else
-              ToastAndroid.show(this.state.currentLang.errors.thirdPartyPassResetError, ToastAndroid.LONG);
+              ToastAndroid.show(props.screenProps.currentLang.errors.thirdPartyPassResetError, ToastAndroid.LONG);
           }
         }
       ]
@@ -126,6 +146,7 @@ export default class SettingsScreen extends Component {
   }
 
   componentDidMount = () => {
+    console.log(auth().currentUser.providerId);
     this._mounted = true;
   }
 
@@ -140,7 +161,7 @@ export default class SettingsScreen extends Component {
 
   renderItem = ({ item }) => {
     return <ListItem
-      containerStyle={{ backgroundColor: colors.light }}
+      containerStyle={{ backgroundColor: colors.light, opacity: item.opacity ? item.opacity : 1 }}
       title={<Text style={{ ...styles.listItemText, color: item.dangerous ? colors.red : undefined }}>{this.capitalize(item.title)}</Text>}
       rightTitle={item.value ? <Text style={{ ...styles.listItemText, opacity: 0.6 }}>{this.capitalize(item.value)}</Text> : undefined}
       leftIcon={{ type: "material", name: item.icon, color: item.iconColor, size: 30 }}
@@ -165,8 +186,6 @@ export default class SettingsScreen extends Component {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     this.setState({ currentError: null });
   }
-
-  keyExtractor = (item, index) => index.toString();
 
   handleAccountDelete = async () => {
     let passTimeoutStartDate = await AsyncStorage.getItem("sportsmart-passTimeout");
@@ -328,7 +347,7 @@ export default class SettingsScreen extends Component {
             style={{ margin: 3 }}
             data={this.state.items}
             renderItem={this.renderItem}
-            keyExtractor={this.keyExtractor}
+            keyExtractor={(item, index) => index.toString()}
           />
         </View>
       <Text style={{ textAlign: "center", marginVertical: 5 }}>{this.props.screenProps.currentLang.labels.createdBy}</Text>

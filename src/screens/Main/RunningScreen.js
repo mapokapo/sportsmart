@@ -21,16 +21,20 @@ export default class RunningScreen extends Component {
       locationPermission: false,
       mapLoaded: false,
       duration: 0,
+      prevDuration: 0,
       position: {
         lat: 0,
         long: 0,
         markerArray: [],
         distance: 0,
+        prevDistance: 0,
+        prevCoords: {},
         startingCoords: {}
       },
       kcal: 0,
       kjoules: 0,
-      prevKj: 0
+      prevKj: 0,
+      prevkcal: 0
     };
   }
 
@@ -62,7 +66,7 @@ export default class RunningScreen extends Component {
   
       return R * c;
     }
-    return haversine(this.state.position.startingCoords, newLatLng, { unit: this.state.userData && this.state.userData.unit === "imperial" ? "mile" : "km" }) || 0;
+    return haversine(this.state.position.prevCoords, newLatLng, { unit: this.state.userData && this.state.userData.unit === "imperial" ? "mile" : "km" }) || 0;
   };
 
   requestLocationPermission = () => new Promise(async (resolve, reject) => {
@@ -96,6 +100,8 @@ export default class RunningScreen extends Component {
           long: newCoordinate.longitude,
           markerArray: [newCoordinate],
           distance: 0,
+          prevDistance: this.state.position.distance,
+          prevCoords: { latitude: this.state.position.lat, longitude: this.state.position.long },
           startingCoords: newCoordinate
         }
       }, () => {
@@ -141,20 +147,29 @@ export default class RunningScreen extends Component {
       };
       this.setState({
         position: {
-          lat: newCoordinate.latitude,
-          long: newCoordinate.longitude,
-          markerArray: this.state.position.markerArray.concat([newCoordinate]),
-          distance: this.calcDistance(newCoordinate),
-          startingCoords: this.state.position.startingCoords
+          ...this.state.position,
+          prevCoords: { latitude: this.state.position.lat, longitude: this.state.position.long }
         }
       }, () => {
-        this.map.animateToRegion({
-          latitude: this.state.position.lat,
-          longitude: this.state.position.long,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421
-        }, 500);
-        this.state.userData && this.state.isRunning && this.getCalories();
+        this.setState({
+          position: {
+            lat: newCoordinate.latitude,
+            long: newCoordinate.longitude,
+            markerArray: this.state.position.markerArray.concat([newCoordinate]),
+            distance: this.state.position.distance + this.calcDistance(newCoordinate),
+            prevDistance: this.state.position.distance,
+            prevCoords: { latitude: this.state.position.lat, longitude: this.state.position.long },
+            startingCoords: this.state.position.startingCoords
+          }
+        }, () => {
+          this.map.animateToRegion({
+            latitude: this.state.position.lat,
+            longitude: this.state.position.long,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421
+          }, 500);
+          this.state.userData && this.state.isRunning && this.getCalories();
+        });
       });
     });
     this.requestLocationPermission();
@@ -185,7 +200,7 @@ export default class RunningScreen extends Component {
       this.interval = null;
       BackgroundGeolocation.stop();
       this.foregroundLocFetch();
-      this.setState({ isRunning: false, duration: 0, kcal: 0, kjoules: 0, position: { lat: this.state.position.lat, long: this.state.position.long, markerArray: [{ longitude: this.state.position.long, latitude: this.state.position.lat }], distance: 0, startingCoords: { longitude: this.state.position.long, latitude: this.state.position.lat } } });
+      this.setState({ prevDuration: 0, isRunning: false, duration: 0, kcal: 0, kjoules: 0, position: { lat: this.state.position.lat, long: this.state.position.long, markerArray: [{ longitude: this.state.position.long, latitude: this.state.position.lat }], distance: 0, prevCoords: {}, startingCoords: { longitude: this.state.position.long, latitude: this.state.position.lat } } });
     }
   }
 
@@ -237,32 +252,43 @@ export default class RunningScreen extends Component {
       }
       const mets = getMets();
       let x = Math.round(((v / 24) * mets * (this.state.duration / 3600)) * 2) / 2; // kcal, rounded
-      this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2, prevKj: this.state.kjoules }, async () => {
+      this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2, prevKj: this.state.kjoules, prevkcal: this.state.kcal }, async () => {
         const doc = await firestore().collection("users").doc(this.state.userData.uid).get();
-        const mData = doc.data().data || [];  // modified data - array of objects that's about to change 
+        const mData = doc.data().data || [];  // modified data - array of objects that's about to change
         function dateDiffInDays(a, b) {
           const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
           const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
           return Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
         }
         // store only last 5 months worth of info about activity, and also update last month with activity info
-        if (mData.length === 0) {
+        if (mData.length === 0) { // if there is no data for the user
           let newObj = {
             kjoules: this.state.kjoules,
+            kcal: this.state.kcal,
+            duration: this.state.duration,
+            distance: Math.round(this.state.position.distance * 100 + Number.EPSILON) / 100,
             date: new Date().toString()
           };
           mData.push(newObj);
-        }
-        if (dateDiffInDays(new Date(mData[mData.length - 1].date), new Date()) > 30) {
+        } else if (dateDiffInDays(new Date(mData[mData.length - 1].date), new Date()) > 30) { // if 30 days have passed since previous update object
           let newObj = {
-            kjoules: mData[mData.length - 1].kjoules + (this.state.kjoules - this.state.prevKj),
+            kjoules: this.state.kjoules,
+            kcal: this.state.kcal,
+            duration: this.state.duration,
+            distance: Math.round(this.state.position.distance * 100 + Number.EPSILON) / 100,
             date: new Date().toString()
           };
-          mData.shift();
           mData.push(newObj);
-        } else {
+          if (mData.length > 5) {
+            mData.shift();
+          }
+        } else { // update current activity object
           mData[mData.length - 1].kjoules += (this.state.kjoules - this.state.prevKj);
+          mData[mData.length - 1].kcal += (this.state.kcal - this.state.prevkcal);
+          mData[mData.length - 1].duration += Math.abs(this.state.duration - this.state.prevDuration);
+          mData[mData.length - 1].distance += Math.round( (this.state.position.distance - this.state.position.prevDistance) * 100 + Number.EPSILON) / 100;
         }
+        this.setState({ prevDuration: this.state.duration });
         firestore().collection("users").doc(this.state.userData.uid).update({
           data: mData
         });
@@ -306,6 +332,7 @@ export default class RunningScreen extends Component {
                       long: newCoordinate.longitude,
                       markerArray: [newCoordinate],
                       distance: 0,
+                      prevCoords: { latitude: this.state.position.lat, longitude: this.state.position.long },
                       startingCoords: newCoordinate
                     }
                   }, () => {

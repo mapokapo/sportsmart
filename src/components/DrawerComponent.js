@@ -13,7 +13,6 @@ export default class DrawerComponent extends Component {
     this.state = {
       drawerItems: [
         "Together",
-        "Activity",
         "Statistics",
         "Settings",
         "Support"
@@ -30,23 +29,12 @@ export default class DrawerComponent extends Component {
     this.unsubscribe = auth().onAuthStateChanged(async user => {
       if (user) {
         if (user.providerData[0].providerId === "facebook.com") {
-          const accessToken = await AccessToken.getCurrentAccessToken();
-          const name = user.displayName,
-            email = user.email,
-            profileImage = user.metadata.photoURL;
           const infoRequest = new GraphRequest(
-            "/me",
-            {
-              accessToken: accessToken.accessToken,
-              parameters: {
-                fields: {
-                  string: "picture.type(large)"
-                }
-              }
-            },
+            "/me?fields=name,email,picture.type(large)",
+            null,
             (err, res) => {
               if (err) return;
-              this.setState({ user: { name, email, profileImage: res.picture.data.url } });
+              this.setState({ user: { name: res.name, email: res.email, profileImage: res.picture.data.url } });
             }
           );
 
@@ -71,7 +59,9 @@ export default class DrawerComponent extends Component {
   render() {
     return (
       <Drawer.Section style={{ flex: 1, backgroundColor: colors.light }}>
-        <TouchableOpacity style={{ padding: 25, display: "flex", justifyContent: "center" }}>
+        <TouchableOpacity style={{ padding: 25, display: "flex", justifyContent: "center" }} onPress={() => {
+          this.props.navigation.navigate("Settings");
+        }}>
           {this.state.user.profileImage === null ? (
             <Icon type="material-community" name="account" color={colors.light} size={48} containerStyle={{ borderRadius: 56/2, width: 56, height: 56 }} />
           ) : (
