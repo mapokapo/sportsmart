@@ -6,6 +6,7 @@ import * as colors from "../../media/colors";
 import { Dialog, Portal, TextInput, FAB } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import PushNotification from "react-native-push-notification";
+import auth from "@react-native-firebase/auth";
 
 var counter = -1;
 
@@ -38,19 +39,25 @@ class NotifiersScreen extends Component {
   }
 
   componentDidMount = () => {
-    AsyncStorage.getAllKeys((err1, keys) => {
-      for (let i = 0; i < keys.length; i++) {
-        if (keys[i].startsWith("sportsmart-notifs")) {
-          AsyncStorage.getItem(keys[i], (err2, value) => {
-            if (value) {
-              let data = JSON.parse(value);
-              data.time = new Date(data.time);
-              this.setState({ notifiers: [ ...this.state.notifiers, data ] });
+    auth().onAuthStateChanged(user => {
+      if (user) {
+        this.setState({ uid: user.uid }, () => {
+          AsyncStorage.getAllKeys((err1, keys) => {
+            for (let i = 0; i < keys.length; i++) {
+              if (keys[i].startsWith("sportsmart-notifs-" + user.uid)) {
+                AsyncStorage.getItem(keys[i], (err2, value) => {
+                  if (value) {
+                    let data = JSON.parse(value);
+                    data.time = new Date(data.time);
+                    this.setState({ notifiers: [ ...this.state.notifiers, data ] });
+                  }
+                })
+              }
             }
-          })
-        }
+          });
+        });
       }
-    })
+    });
     PushNotification.configure({    
       onNotification: function({ foreground, userInteraction }) {
         if (foreground && userInteraction) {
@@ -129,7 +136,7 @@ class NotifiersScreen extends Component {
         let objArray = this.state.notifiers;
         objArray[item] = newItem;
         this.setState({ notifiers: objArray, editVisible: false }, () => {
-          AsyncStorage.setItem("sportsmart-notifs" + this.state.itemID, JSON.stringify(newItem));
+          AsyncStorage.setItem("sportsmart-notifs-" + this.state.uid + this.state.itemID, JSON.stringify(newItem));
           if (this.state.activeBool) {
             let seconds = this.getTimeToAlarm();
             setTimeout(() => {
@@ -167,7 +174,7 @@ class NotifiersScreen extends Component {
       }
     }
     this.setState({ notifiers: [...this.state.notifiers, { itemID: this.state.itemID, time: this.state.timeText, description: this.state.descText, active: this.state.activeBool, id: ++counter }], editVisible: false }, () => {
-      AsyncStorage.setItem("sportsmart-notifs" + this.state.itemID, JSON.stringify({ id: this.state.itemID, time: this.state.timeText, description: this.state.descText, active: this.state.activeBool, id: ++counter }));
+      AsyncStorage.setItem("sportsmart-notifs-" + this.state.uid + this.state.itemID, JSON.stringify({ id: this.state.itemID, time: this.state.timeText, description: this.state.descText, active: this.state.activeBool, id: ++counter }));
       let seconds = this.getTimeToAlarm();
       setTimeout(() => {
         PushNotification.localNotificationSchedule({
@@ -216,7 +223,7 @@ class NotifiersScreen extends Component {
     });
     newObj = newObj.filter(obj => obj.id !== this.state.editing);
     this.setState({ notifiers: newObj, editVisible: false });
-    AsyncStorage.removeItem("sportsmart-notifs" + delItem.itemID);
+    AsyncStorage.removeItem("sportsmart-notifs-" + this.state.uid + delItem.itemID);
   }
 
   render() {
@@ -309,7 +316,7 @@ class NotifiersScreen extends Component {
                 value: item.active,
                 onValueChange: value => {
                   this.setState(prevState => ({notifiers: prevState.notifiers.map((obj, objIndex) => (objIndex === index ? Object.assign(obj, { active: value }) : obj))}), () => {
-                    AsyncStorage.setItem("sportsmart-notifs" + item.itemID);
+                    AsyncStorage.setItem("sportsmart-notifs-" + this.state.uid + item.itemID);
                     if (value) {
                       let seconds = this.getTimeToAlarm(item);
                       PushNotification.localNotificationSchedule({

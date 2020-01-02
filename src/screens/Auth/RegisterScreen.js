@@ -109,7 +109,7 @@ export default class RegisterScreen extends Component {
   }
 
   emailCheck = (text) => {
-    return /^\w+@\w+\.\w+$/g.test(text);
+    return /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(String(text).toLowerCase());
   }
 
   weightCheck = (text) => {
@@ -203,7 +203,7 @@ export default class RegisterScreen extends Component {
             bio: this.state.bioText,
             weight: Number(this.state.weightText),
             height: Number(this.state.heightText),
-            profileImage: this.state.profileImage || null,
+            profileImage: this.state.profileImage,
             joined: date,
             admin: 0,
             unit: this.state.unit,
@@ -223,13 +223,17 @@ export default class RegisterScreen extends Component {
             this.setState({ loading: false });
           });
         }
-        if (this.state.profileImage !== null) {
-          let ref = storage().ref("profileImages/").child(userCredential.user.uid);
-          let ext = this.state.profileImage.path.split(".")[1];
-          ref.putFile(this.state.profileImage.path, { contentType: `image/${ext}` }).then(item => {
-            ref.getDownloadURL().then(url => {
-              this.setState({ profileImage: url }, () => dbUpload());
-            }).catch(err => {
+        let ref = storage().ref("profileImages/").child(userCredential.user.uid);
+        let ext = this.state.profileImage !== null && this.state.profileImage.path ? this.state.profileImage.path.split(".")[1] : "png";
+        ref.putFile(this.state.profileImage !== null && this.state.profileImage.path ? this.state.profileImage.path : "", { contentType: `image/${ext}` }).then(() => {
+          ref.getDownloadURL().then(url => {
+            let finalUrl = url;
+            if (this.state.profileImage === null) {
+              finalUrl = "https://firebasestorage.googleapis.com/v0/b/sportsmart-629ee.appspot.com/o/profileImages%2Fprofile_picture.png?alt=media&token=cc89416a-bc8f-4490-b6ba-ec9e4f4dccaa";
+            }
+            this.setState({ profileImage: finalUrl }, () => dbUpload());
+          }).catch(err => {
+            if (this.state.profileImage !== null) {
               switch(err.code) {
                 case "auth/unknown":
                   ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
@@ -237,9 +241,11 @@ export default class RegisterScreen extends Component {
                 default:
                   ToastAndroid.show(this.props.screenProps.currentLang.errors.imageUnhandledError + err.message, ToastAndroid.LONG);
               }
-              this.setState({ profileImage: null }, () => dbUpload());
-            })
-          }).catch(err => {
+            }
+            this.setState({ profileImage: "https://firebasestorage.googleapis.com/v0/b/sportsmart-629ee.appspot.com/o/profileImages%2Fprofile_picture.png?alt=media&token=cc89416a-bc8f-4490-b6ba-ec9e4f4dccaa" }, () => dbUpload());
+          })
+        }).catch(err => {
+          if (this.state.profileImage !== null) {
             switch(err.code) {
               case "auth/unknown":
                 ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
@@ -247,9 +253,9 @@ export default class RegisterScreen extends Component {
               default:
                 ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError + err.message, ToastAndroid.LONG);
             }
-            this.setState({ profileImage: null }, () => dbUpload());
-          });
-        }
+          }
+          this.setState({ profileImage: "https://firebasestorage.googleapis.com/v0/b/sportsmart-629ee.appspot.com/o/profileImages%2Fprofile_picture.png?alt=media&token=cc89416a-bc8f-4490-b6ba-ec9e4f4dccaa" }, () => dbUpload());
+        });
       }).catch(err => {
         switch(err.code) {
           case "auth/email-already-in-use":
@@ -432,7 +438,7 @@ export default class RegisterScreen extends Component {
                   <Picker.Item label="Imperial" value="imperial" />
                 </Picker>
               </View>)}
-              {!this.state.higherInputFocused && !this.state.lowerInputFocused && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 15, marginLeft: this.props.screenProps.currentLang.name !== "english" ? 15 : 5, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
+              {!this.state.higherInputFocused && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 15, marginLeft: this.props.screenProps.currentLang.name !== "english" ? 15 : 5, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
                 <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>{this.props.screenProps.currentLang.labels.genderText}</Text>
                 <Picker
                   mode="dropdown"

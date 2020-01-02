@@ -5,7 +5,7 @@ import { Icon, Image } from "react-native-elements";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import * as colors from "../media/colors";
-import { GraphRequest, GraphRequestManager, AccessToken } from "react-native-fbsdk";
+import { GraphRequest, GraphRequestManager } from "react-native-fbsdk";
 
 export default class DrawerComponent extends Component {
   constructor(props) {

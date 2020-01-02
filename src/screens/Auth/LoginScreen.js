@@ -48,7 +48,8 @@ export default class LoginScreen extends Component {
     Keyboard.addListener("keyboardDidShow", this._keyboardShown);
     Keyboard.addListener("keyboardDidHide", this._keyboardHidden);
     GoogleSignin.configure({
-      webClientId: '373206170368-e8jrbu94tgslrel2h8ar0835pkc2jl37.apps.googleusercontent.com',
+      webClientId: "373206170368-e8jrbu94tgslrel2h8ar0835pkc2jl37.apps.googleusercontent.com",
+      androidClientId: __DEV__ ? "373206170368-vprikdvlmml7qd85s5m83kmn5nodl69i.apps.googleusercontent.com" : "373206170368-o7fvdepqndj5q9in65c6ct0v4pallnhm.apps.googleusercontent.com",
       offlineAccess: true,
       forceConsentPrompt: true,
       scopes: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"]

@@ -25,7 +25,7 @@ export default class ProfileScreen extends Component {
   componentDidMount = () => {
     this.unsubscribe = auth().onAuthStateChanged(async user => {
       if (user) {
-        if (user.providerId === "facebook.com") {
+        if (user.providerData[0].providerId === "facebook.com") {
           const infoRequest = new GraphRequest(
             "/me?fields=name,email,picture.type(large)",
             null,
@@ -35,7 +35,7 @@ export default class ProfileScreen extends Component {
             }
           );
           new GraphRequestManager().addRequest(infoRequest).start();
-        } else if (user.providerId === "google.com") {
+        } else if (user.providerData[0].providerId === "google.com") {
           this.setState({ userData: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
         } else {
           let getLastMonths = n => {
@@ -55,10 +55,10 @@ export default class ProfileScreen extends Component {
               return;
             }
             const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
-            const activity = data.map(({ kjoules }) => kjoules);
-            if (activity[activity.length - 1] > 10000) {
+            const activity = data ? data.map(({ kjoules }) => kjoules) : [];
+            if (activity[activity.length - 1] > 500) {
               const total = activity[activity.length - 1];
-              this.setState({ medals: [ ...this.state.medals, { type: "monthly-activity", value: total } ] });
+              this.setState({ medals: [ ...this.state.medals, { icon: require("../../media/Medalje_01.png"), value: total }, { icon: require("../../media/Medalje_02.png"), value: total }, { icon: require("../../media/Medalje_03.png"), value: total } ] });
             }
             this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
           });
@@ -69,6 +69,7 @@ export default class ProfileScreen extends Component {
     });
     GoogleSignin.configure({
       webClientId: "373206170368-e8jrbu94tgslrel2h8ar0835pkc2jl37.apps.googleusercontent.com",
+      androidClientId: __DEV__ ? "373206170368-vprikdvlmml7qd85s5m83kmn5nodl69i.apps.googleusercontent.com" : "373206170368-o7fvdepqndj5q9in65c6ct0v4pallnhm.apps.googleusercontent.com",
       offlineAccess: true,
       forceConsentPrompt: true
     });
@@ -128,7 +129,9 @@ export default class ProfileScreen extends Component {
                   <Text style={styles.profileTextBig}>{this.state.userData.name}</Text>
                   <Text style={styles.profileText}>{this.state.userData.email}</Text>
                   {this.state.userData.born && (<Text style={styles.profileText}>{this.state.userData.born}</Text>)}
-              <View style={{ flexDirection: "row" }}>{this.state.medals.map((medal, index) => <Icon key={index} type="material-community" name="medal" size={30} color={medal.type === "monthly-activity" ? colors.red : "gold"} />)}</View>
+              <View style={{ flexDirection: "row" }}>{this.state.medals.map((medal, index) => (
+                <Image key={index} style={{ width: 21, height: 33, marginHorizontal: 5 }} source={medal.icon} />
+              ))}</View>
                 </View>
               </>)
             }
@@ -143,15 +146,28 @@ export default class ProfileScreen extends Component {
                   <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10, borderRightColor: colors.dark, borderRightWidth: StyleSheet.hairlineWidth }}>{this.state.userData.weight}{this.state.userData.unit === "metric" ? "kg" : "lb"}</Text>
                   <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10 }}>{this.state.userData.height}{this.state.userData.unit === "metric" ? "cm" : "in"}</Text>
                 </View>)}
-                {this.state.userData && this.state.data && !this.state.iconClicked ? (<View style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
-                  <Text style={{ color: colors.light, fontSize: 28, textAlign: "center", marginBottom: -12, marginTop: -10 }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
-                  <ProgressBar color={colors.red} progress={this.state.userData.data[this.state.userData.data.length - 1].kjoules / 10000} style={{ width: screenWidth/1.5, marginBottom: -15 }} />
-                  {this.state.userData.gender && (<Icon name="refresh" onPress={() => this.refreshMonthyData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />)}
-                </View>) : (this.state.iconClicked === true ? (<View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View>) : (this.state.userData.gender ? (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.light} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
-                </View>) : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center", paddingHorizontal: 15 }}>
-                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.errors.thirdPartyPassResetError}</Text>
-                </View>)))}
+                {this.state.userData && this.state.data && !this.state.iconClicked ? (
+                  <View style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
+                    <Text style={{ color: colors.light, fontSize: 28, textAlign: "center", marginBottom: -12, marginTop: -10 }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
+                    <ProgressBar
+                      color={colors.red}
+                      progress={this.state.userData.data[this.state.userData.data.length - 1].kjoules / 10000}
+                      style={{ width: screenWidth/1.5, marginBottom: -15 }}
+                    />
+                    {this.state.userData.gender && (
+                      <Icon name="refresh" onPress={() => this.refreshMonthyData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />
+                    )}
+                  </View>
+                ) : (this.state.iconClicked === true ? (
+                    <View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}>
+                      <ActivityIndicator size="large" color={colors.blue} />
+                    </View>
+                  ) : (this.state.userData.gender && (
+                      <View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center", paddingHorizontal: 15 }}>
+                      </View>
+                    )
+                  )
+                )}
                 {this.state.userData && this.state.data && !this.state.iconClicked ? (<View style={{ height: 220, width: screenWidth, elevation: 2 }}>
                   <LineChart
                     bezier

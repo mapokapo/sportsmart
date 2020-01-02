@@ -107,7 +107,7 @@ export default class StatisticsScreen extends Component {
               return;
             }
             if (!doc.data().data) {
-              ToastAndroid.show(this.props.screenProps.currentLang.errors.noData1 + this.props.screenProps.currentLang.errors.noData2, ToastAndroid.LONG);
+              ToastAndroid.show(this.props.screenProps.currentLang.labels.noData1 + this.props.screenProps.currentLang.labels.noData2, ToastAndroid.LONG);
               this.setState({ loading: false, loaded: false });
               return;
             }
@@ -150,7 +150,7 @@ export default class StatisticsScreen extends Component {
   }
 
   componentWillUnmount = () => {
-    this.unsubscribe && this.unsubscribe();
+    if (this.unsubscribe) this.unsubscribe();
   }
 
   renderItem = ({ item, index }) => {
@@ -190,9 +190,15 @@ export default class StatisticsScreen extends Component {
             contentContainerStyle={{ justifyContent: "center", flexGrow: 1, flexDirection: "row", flexWrap: "wrap" }}
           >
             {this.state.items.map((item, index) => this.renderItem({item, index}))}
-          </ScrollView>) : (!this.state.loading && !this.state.loaded  ? (<View style={{ elevation: 2, flexDirection: "row", opacity: 0.75, flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
+          </ScrollView>) : (!this.state.loading && !this.state.loaded  ?
+            (
+              <View style={{ elevation: 2, flexDirection: "row", opacity: 0.75, flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ textAlign: "center", fontSize: 20, color: colors.dark }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.dark} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.dark }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
-                </View>) : (<ActivityIndicator size="large" color={colors.dark} />))}
+              </View>
+            ) : (
+              <ActivityIndicator size="large" color={colors.dark} />
+            )
+          )}
         </View>
       </View>
     )

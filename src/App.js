@@ -22,7 +22,6 @@ import ProfileScreen from "./screens/Main/ProfileScreen";
 
 /* Drawer Item Components */
 import TogetherScreen from "./screens/DrawerItems/TogetherScreen";
-import ActivityScreen from "./screens/DrawerItems/ActivityScreen";
 import StatisticsScreen from "./screens/DrawerItems/StatisticsScreen";
 import SettingsScreen from "./screens/DrawerItems/SettingsScreen";
 import SupportScreen from "./screens/DrawerItems/SupportScreen";
@@ -156,7 +155,7 @@ export default class App extends React.Component {
   componentDidMount = () => {
     AsyncStorage.getItem("sportsmartLanguage").then(item => {
       if (item) {
-        if (Object.keys(JSON.parse(item).labels).length === Object.keys(this.state.currentLang).length) this.setState({ currentLang: JSON.parse(item) });
+        this.setState({ currentLang: JSON.parse(item) });
       }
     });
   }

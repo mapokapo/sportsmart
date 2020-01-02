@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "373206170368-o7fvdepqndj5q9in65c6ct0v4pallnhm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sportsmart",
+            "certificate_hash": "263333d5cf1e2e3c38891cbfec77fa29c52495ae"
+          }
+        },
+        {
           "client_id": "373206170368-vprikdvlmml7qd85s5m83kmn5nodl69i.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

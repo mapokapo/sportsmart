@@ -178,7 +178,7 @@ const languages = [
       confirmDeletionText: "Da bi bili sigurni da želite izbrisati svoj račun, morate unijeti lozinku.",
       createdBy: "Napravio - Leo Petrović",
       noData1: "Nema podataka. Idite na ",
-      noData2: " 'Trening' da bi skupili statistike o svojoj aktivnosti."
+      noData2: " 'Trening' da biste skupili statistike o svojoj aktivnosti."
     }
   }
 ];

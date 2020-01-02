@@ -121,7 +121,7 @@ export default class RunningScreen extends Component {
   componentDidMount() {
     this._mounted = true;
     this.unsubscribe = auth().onAuthStateChanged(async user => {
-      if (user && user.providerId === "firebase") {
+      if (user && user.providerData[0].providerId === "password") {
         let doc = await firestore().collection("users").doc(user.uid).get();
         if (doc.exists) this.setState({ userData: doc.data() });
       }

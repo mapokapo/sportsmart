@@ -14,6 +14,7 @@ import { StackActions } from "react-navigation";
 export default class SettingsScreen extends Component {
   constructor(props) {
     super(props);
+    this.unsubscribe = null;
     this.state = {
       currentItem: null,
       modalVisible: false,
@@ -43,39 +44,43 @@ export default class SettingsScreen extends Component {
           iconColor: colors.blue,
           onClick: () => {
             let promiseArr = [];
-            AsyncStorage.getAllKeys((err, keys) => {
-              keys.forEach(key => {
-                if (key.startsWith("sportsmart-notifs")) {
-                  const delItemKey = key.replace("sportsmart-notifs", "");
-                  PushNotification.cancelLocalNotifications({
-                    id: delItemKey
-                  });
-                  promiseArr.push(AsyncStorage.removeItem(key));
-                }
-              })
-            }).then(() => {
-              Promise.all(promiseArr).then(() => {
-                String.prototype.format = function() {
-                  let args = arguments;
-                  return this.replace(/{(\d+)}/g, function(match, number) { 
-                    return typeof args[number] != "undefined"
-                      ? args[number]
-                      : match
-                    ;
-                  });
-                };
-                ToastAndroid.show(this.props.screenProps.currentLang.labels.notifsDeleted.toString().format(promiseArr.length.toString()), ToastAndroid.SHORT);
-              })
-            });
+            this.unsubscribe = auth().onAuthStateChanged(user => {
+              if (user) {
+                AsyncStorage.getAllKeys((err, keys) => {
+                  keys.forEach(key => {
+                    if (key.startsWith("sportsmart-notifs-" + user.uid)) {
+                      const delItemKey = key.replace("sportsmart-notifs-" + user.uid, "");
+                      PushNotification.cancelLocalNotifications({
+                        id: delItemKey
+                      });
+                      promiseArr.push(AsyncStorage.removeItem(key));
+                    }
+                  })
+                }).then(() => {
+                  Promise.all(promiseArr).then(() => {
+                    String.prototype.format = function() {
+                      let args = arguments;
+                      return this.replace(/{(\d+)}/g, function(match, number) { 
+                        return typeof args[number] != "undefined"
+                          ? args[number]
+                          : match
+                        ;
+                      });
+                    };
+                    ToastAndroid.show(this.props.screenProps.currentLang.labels.notifsDeleted.toString().format(promiseArr.length.toString()), ToastAndroid.SHORT);
+                  })
+                });
+              }
+            })
           }
         },
         {
           title: props.screenProps.currentLang.labels.resetPass,
           icon: "lock",
           iconColor: colors.blue,
-          opacity: auth().currentUser.providerId === "firebase" ? 1 : 0.5,
+          opacity: auth().currentUser.providerData[0].providerId === "password" ? 1 : 0.5,
           onClick: () => {
-            if (auth().currentUser.providerId === "firebase") {
+            if (auth().currentUser.providerData[0].providerId === "password") {
               const action = StackActions.push({
                 routeName: "ForgotPass",
                 params: {
@@ -102,10 +107,10 @@ export default class SettingsScreen extends Component {
           title: props.screenProps.currentLang.labels.deleteAccount,
           icon: "delete",
           iconColor: colors.red,
-          opacity: auth().currentUser.providerId === "firebase" ? 1 : 0.5,
+          opacity: auth().currentUser.providerData[0].providerId === "password" ? 1 : 0.5,
           dangerous: true,
           onClick: () => {
-            if (auth().currentUser.providerId === "firebase")
+            if (auth().currentUser.providerData[0].providerId === "password")
               this.setState({ modalVisible: true, modalContent: "delAcc" })
             else
               ToastAndroid.show(props.screenProps.currentLang.errors.thirdPartyPassResetError, ToastAndroid.LONG);
@@ -122,8 +127,8 @@ export default class SettingsScreen extends Component {
     let promiseArr = [];
     AsyncStorage.getAllKeys((err, keys) => {
       keys.forEach(key => {
-        if (key.startsWith("sportsmart-notifs")) {
-          const delItemKey = key.replace("sportsmart-notifs", "");
+        if (key.startsWith("sportsmart-notifs-" + this.state.uid)) {
+          const delItemKey = key.replace("sportsmart-notifs-" + this.state.uid, "");
           PushNotification.cancelLocalNotifications({
             id: delItemKey
           });
@@ -146,11 +151,11 @@ export default class SettingsScreen extends Component {
   }
 
   componentDidMount = () => {
-    console.log(auth().currentUser.providerId);
     this._mounted = true;
   }
 
   componentWillUnmount = () => {
+    if (this.unsubscribe) this.unsubscribe();
     this._mounted = false;
   }
 
@@ -237,16 +242,20 @@ export default class SettingsScreen extends Component {
     }
     this.setState({ loading: true }, () => {
       const email = auth().currentUser.email;
-      auth().signInWithEmailAndPassword(email, this.state.passText).then(user => {
+      auth().currentUser.reauthenticateWithCredential(auth.EmailAuthProvider.credential(email, this.state.passText)).then(user => {
         firestore().collection("users").doc(user.user.uid).delete().then(() => {
-          storage().ref("profileImages").child(user.user.uid).delete().then(() => {
+          storage().ref("profileImages").child(user.user.uid).delete().finally(() => {
             auth().currentUser.delete().then(() => {
               this.deleteAllNotifiers();
               this.props.navigation.navigate("Auth");
             })
           });
         });
-      }).catch(() => {
+      }).catch(err => {
+        if (err.message === "[auth/unknown] We have blocked all requests from this device due to unusual activity. Try again later. [ Too many unsuccessful login attempts. Please try again later. ]") {
+          this.setState({ passError: true, passAttempts: 6 });
+          this.triggerError(this.props.screenProps.currentLang.errors.tooManyAttempts);
+        }
         this.setState({ passError: true, passAttempts: this.state.passAttempts + 1 });
         this.triggerError(this.props.screenProps.currentLang.errors.passIncorrect);
       }).finally(() => {
@@ -268,8 +277,9 @@ export default class SettingsScreen extends Component {
                     let newItems = this.state.items;
                     newItems[0] = { ...newItems[0], value: this.props.screenProps.currentLang.name, title: this.props.screenProps.currentLang.labels.language };
                     newItems[1] = { ...newItems[1], title: this.props.screenProps.currentLang.labels.disableAllNotifs };
-                    newItems[2] = { ...newItems[2], title: this.props.screenProps.currentLang.labels.logOut };
-                    newItems[3] = { ...newItems[3], title: this.props.screenProps.currentLang.labels.deleteAccount };
+                    newItems[2] = { ...newItems[2], title: this.props.screenProps.currentLang.labels.resetPass };
+                    newItems[3] = { ...newItems[3], title: this.props.screenProps.currentLang.labels.logOut };
+                    newItems[4] = { ...newItems[3], title: this.props.screenProps.currentLang.labels.deleteAccount };
                     this.setState({ language: value, items: newItems });
                   });
                 }}
