@@ -274,7 +274,7 @@ export default class LoginScreen extends Component {
                 }
               }}
             />
-            <View style={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row" }}>
+            <View style={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row", flexWrap: "wrap" }}>
               <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.props.screenProps.currentLang.labels.registerText}</Text></TouchableOpacity>
               <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.props.screenProps.currentLang.labels.resetPassText}</Text></TouchableOpacity>
             </View>

@@ -1,8 +1,8 @@
 import React, { Component } from "react";
-import { Text, FlatList, View, StyleSheet, ToastAndroid, UIManager, LayoutAnimation } from "react-native";
+import { Text, FlatList, View, StyleSheet, ToastAndroid, UIManager, LayoutAnimation, TouchableOpacity, PermissionsAndroid, Picker, Platform } from "react-native";
 import AppHeader from "../../components/AppHeader";
 import * as colors from "../../media/colors";
-import { ListItem, Button } from "react-native-elements";
+import { ListItem, Button, Image, Icon, Input } from "react-native-elements";
 import { Portal, Dialog, RadioButton, TextInput } from "react-native-paper";
 import AsyncStorage from "@react-native-community/async-storage";
 import PushNotification from "react-native-push-notification";
@@ -10,6 +10,16 @@ import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
 import { StackActions } from "react-navigation";
+import ImagePicker from 'react-native-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+const options = {
+  title: "Select Image",
+  storageOptions: {
+    skipBackup: true,
+    path: "images",
+  },
+}
 
 export default class SettingsScreen extends Component {
   constructor(props) {
@@ -26,7 +36,20 @@ export default class SettingsScreen extends Component {
       currentTimeout: null,
       currentPassTimeout: null,
       currentPassTimeoutTime: 15000,
+      profileImage: null,
+      nameText: "",
+      weightText: "",
+      heightText: "",
+      bioText: "",
+      bornText: new Date(null),
+      nameError: false,
+      weightError: false,
+      heightError: false,
+      bornError: false,
+      unit: "metric",
+      gender: "male",
       passText: "",
+      datePickerOpen: false,
       items: [
         {
           title: props.screenProps.currentLang.labels.language,
@@ -36,6 +59,14 @@ export default class SettingsScreen extends Component {
           values: props.screenProps.languages.map(({ name }) => name),
           onClick: () => {
             this.setState({ modalVisible: true, modalContent: "lang" });
+          }
+        },
+        {
+          title: props.screenProps.currentLang.labels.editProfile,
+          icon: "edit",
+          iconColor: colors.blue,
+          onClick: () => {
+            this.setState({ modalVisible: true, modalContent: "editProfile" });
           }
         },
         {
@@ -122,6 +153,34 @@ export default class SettingsScreen extends Component {
       UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }
+
+  weightCheck = (text) => {
+    return /^\d+\.?\d+$/g.test(text);
+  }
+
+  heightCheck = (text) => {
+    return /^\d+\.?\d+$/g.test(text);
+  }
+
+  ageCheck = (born) => {
+    return born.getTime() !== 0;
+  }
+
+  requestStoragePermission = () => new Promise(async (resolve, reject) => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          title: this.props.screenProps.currentLang.labels.storagePermissionTitle,
+          message: this.props.screenProps.currentLang.labels.storagePermissionText,
+          buttonPositive: "OK",
+        },
+      );
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
 
   deleteAllNotifiers = () => {
     let promiseArr = [];
@@ -338,6 +397,151 @@ export default class SettingsScreen extends Component {
             </Dialog.Content>
           </>
         )
+      case "editProfile":
+        return (
+          <>
+            <Dialog.Title style={{ ...styles.bigText, flexGrow: 1, marginTop: 10, marginBottom: 5 }}>{this.props.screenProps.currentLang.labels.editProfile}</Dialog.Title>
+            <Dialog.Content style={{ flexGrow: 1 }}>
+              <View style={{ flexGrow: 1, flexDirection: "row", display: "flex", marginTop: -25 }}>
+                <View style={{ width: 150, height: 150, marginRight: 10, display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <TouchableOpacity onPress={() => {
+                    this.requestStoragePermission().then(() => {
+                      ImagePicker.showImagePicker(options, (response) => {
+                        if (!response.didCancel && !response.error) {
+                          this.setState({ profileImage: response });
+                        }
+                      });
+                    });
+                  }}>
+                    {this.state.profileImage === null ? (
+                      <Icon name="add-a-photo" size={125} color={colors.dark} />
+                    ) : (
+                      <Image
+                        source={{ uri: this.state.profileImage.uri }}
+                        style={{ width: 125, height: 125 }}
+                        containerStyle={{ overflow: "hidden", borderRadius: 125/2, elevation: 1 }}
+                        placeholderStyle={{ display: "none" }}
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <View style={{ flexGrow: 1 }}>
+                  <Input
+                    autoCapitalize="words"
+                    textContentType="name"
+                    error={this.state.nameError}
+                    label={this.props.screenProps.currentLang.labels.name}
+                    value={this.state.nameText}
+                    returnKeyType="next"
+                    containerStyle={{ margin: 0, padding: 0, marginBottom: 15, marginTop: 20 }}
+                    style={{ margin: 0, padding: 0 }}
+                    inputContainerStyle={{ margin: 0, padding: 0 }}
+                    inputStyle={{ margin: 0, padding: 0 }}
+                    labelStyle={{ margin: 0, padding: 0, marginBottom: -8 }}
+                    blurOnSubmit={false}
+                    onChangeText={text => this.setState({ nameText: text, nameError: false })}
+                    autoFocus
+                    onFocus={() => this.setState({ nameError: false }, () => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                    })}
+                  />
+                  <View style={{ borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 5, marginLeft: 5, height: 40 }}>
+                    <Text style={{ width: 35, position: "relative", top: -11, left: 10, backgroundColor: colors.white, paddingVertical: 1, paddingHorizontal: 5 }}>Unit</Text>
+                    <Picker
+                      style={{ margin: 0, padding: 0, marginTop: -25 }}
+                      mode="dropdown"
+                      selectedValue={this.state.unit}
+                      onValueChange={(itemValue) => {
+                        this.setState({ unit: itemValue });
+                      }}>
+                      <Picker.Item label="Metric" value="metric" />
+                      <Picker.Item label="Imperial" value="imperial" />
+                    </Picker>
+                  </View>
+                </View>
+              </View>
+              <Input
+                label={this.props.screenProps.currentLang.labels.bio}
+                value={this.state.bioText}
+                returnKeyType="next"
+                multiline={true}
+                numberOfLines={2}
+                maxLength={40}
+                containerStyle={{ margin: 0, padding: 0, flexGrow: 1, marginBottom: 5, marginTop: -10 }}
+                style={{ margin: 0, padding: 0 }}
+                inputContainerStyle={{ margin: 0, padding: 0 }}
+                inputStyle={{ margin: 0, padding: 0 }}
+                labelStyle={{ margin: 0, padding: 0, marginBottom: -8 }}
+                blurOnSubmit={false}
+                onChangeText={text => { if(this.state.bioText.length <= 40) this.setState({ bioText: text }) }}
+              />
+              <View style={{ flexDirection: "row", display: "flex" }}>
+                <View style={{ flex: 1 }}>
+                  <Input
+                    keyboardType="decimal-pad"
+                    error={this.state.heightError}
+                    label={this.props.screenProps.currentLang.labels.height}
+                    value={this.state.heightText}
+                    returnKeyType="next"
+                    containerStyle={{ margin: 0, padding: 0, marginBottom: 5 }}
+                    style={{ margin: 0, padding: 0 }}
+                    inputContainerStyle={{ margin: 0, padding: 0 }}
+                    inputStyle={{ margin: 0, padding: 0 }}
+                    labelStyle={{ margin: 0, padding: 0, marginBottom: -8 }}
+                    blurOnSubmit={false}
+                    onChangeText={text => this.setState({ heightText: text, heightError: false })}
+                    onFocus={() => this.setState({ heightError: false }, () => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                    })}
+                  />
+                  <View style={{ position: "absolute", right: 10, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+                    <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "CM" : "IN"}</Text>
+                  </View>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Input
+                    keyboardType="decimal-pad"
+                    error={this.state.weightError}
+                    label={this.props.screenProps.currentLang.labels.weight}
+                    value={this.state.weightText}
+                    returnKeyType="next"
+                    containerStyle={{ margin: 0, padding: 0, marginBottom: 5, flex: 1 }}
+                    style={{ margin: 0, padding: 0 }}
+                    inputContainerStyle={{ margin: 0, padding: 0 }}
+                    inputStyle={{ margin: 0, padding: 0 }}
+                    labelStyle={{ margin: 0, padding: 0, marginBottom: -8 }}
+                    blurOnSubmit={false}
+                    onChangeText={text => this.setState({ weightText: text, weightError: false })}
+                    onFocus={() => this.setState({ weightError: false }, () => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                    })}
+                  />
+                  <View style={{ position: "absolute", right: 10, top: 0, bottom: 0, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+                    <Text style={{ color: colors.dark, fontWeight: "bold" }}>{this.state.unit === "metric" ? "KG" : "LB"}</Text>
+                  </View>
+                </View>
+              </View>
+              <Button onPress={() => this.setState({ datePickerOpen: true })} raised titleStyle={{ textAlign: "center", color: colors.dark, fontWeight: "bold", flexGrow: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: 0, marginBottom: 0, backgroundColor: colors.light, flexGrow: 1 }} containerStyle={{ display: "flex", flexGrow: 1, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginVertical: 10 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString(this.state.unit === "metric" ? "en-GB" : "en-US") : this.props.screenProps.currentLang.labels.born} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />
+              {this.state.datePickerOpen && (<DateTimePicker
+                value={this.state.bornText}
+                mode="date"
+                is24Hour={true}
+                display="calendar"
+                onChange={(event, date) => event.type === "dismissed" ? this.setState({ datePickerOpen: false }) : this.setState({ bornText: date, datePickerOpen: false })}
+                onDismiss={() => this.setState({ datePickerOpen: false })}
+              />)}
+              {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
+              <Button
+                titleStyle={{ color: colors.light }}
+                buttonStyle={{ backgroundColor: colors.red }}
+                title={this.props.screenProps.currentLang.labels.finish}
+                type="solid"
+                raised
+                loading={this.state.loading}
+              />
+            </Dialog.Content>
+          </>
+        );
       default:
         return null;
     }
@@ -378,7 +582,7 @@ const styles = StyleSheet.create({
     fontSize: 18
   },
   bigText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
     color: colors.dark,
     textAlign: "center"

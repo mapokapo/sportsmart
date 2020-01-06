@@ -22,6 +22,7 @@ import ProfileScreen from "./screens/Main/ProfileScreen";
 
 /* Drawer Item Components */
 import TogetherScreen from "./screens/DrawerItems/TogetherScreen";
+import TogetherProfile from "./screens/DrawerItems/TogetherProfile";
 import StatisticsScreen from "./screens/DrawerItems/StatisticsScreen";
 import SettingsScreen from "./screens/DrawerItems/SettingsScreen";
 import SupportScreen from "./screens/DrawerItems/SupportScreen";
@@ -83,7 +84,21 @@ const BottomTabNavigator = createStackNavigator({
 /* Switch 1 */
 const DrawerNavigator = createDrawerNavigator({
   Tabs: BottomTabNavigator,
-  Together: TogetherScreen,
+  Together: createStackNavigator({
+    Together: {
+      screen: TogetherScreen,
+      navigationOptions: {
+        header: null
+      }
+    },
+    TogetherProfile: {
+      screen: TogetherProfile
+    }
+  }, {
+    defaultNavigationOptions: ({ navigation, screenProps }) => ({
+      header: <AppHeader navigation={navigation} screenProps={screenProps} />
+    })
+  }),
   Statistics: StatisticsScreen,
   Settings: SettingsScreen,
   Support: SupportScreen

@@ -105,7 +105,7 @@ export default class RegisterScreen extends Component {
   }
 
   passCheck = (text) => {
-    return /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/g.test(text);
+    return /^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*.,\s()_+=\-~`{}|":?/><\\';\[\]]).{8,}$/.test(text);
   }
 
   emailCheck = (text) => {
@@ -205,7 +205,6 @@ export default class RegisterScreen extends Component {
             height: Number(this.state.heightText),
             profileImage: this.state.profileImage,
             joined: date,
-            admin: 0,
             unit: this.state.unit,
             born: this.state.bornText.toDateString(),
             gender: this.state.gender
@@ -302,7 +301,7 @@ export default class RegisterScreen extends Component {
 
   render() {
     return (
-      <View enableOnAndroid={true} keyboardShouldPersistTaps="always" keyboardDismissMode="on-drag" contentContainerStyle={{ flexGrow: 1 }} style={styles.mainWrapper}>
+      <View style={styles.mainWrapper}>
         <Portal>
           <Dialog visible={this.state.dialogText !== null} onDismiss={this.hideDialog}>
             <Dialog.Title>Error</Dialog.Title>

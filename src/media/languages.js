@@ -88,7 +88,11 @@ const languages = [
       confirmDeletionText: "In order to make sure you want to delete your account, you need to input your password below.",
       createdBy: "Created by Leo Petrovic",
       noData1: "No data. Go to the ",
-      noData2: " 'Running' screen to get statistics about your activity."
+      noData2: " 'Running' screen to get statistics about your activity.",
+      noData: "No data.",
+      searchUsers: "Search Users...",
+      loading: "Loading",
+      editProfile: "Edit profile"
     }
   },
   {
@@ -163,7 +167,7 @@ const languages = [
       description: "Opis",
       finish: "Završi",
       delete: "Izbriši",
-      alarmSet: "Vrijeme postavljeno za {0} sat/i and {1} minut/a",
+      alarmSet: "Vrijeme postavljeno za {0} sat/i i {1} minut/a",
       months: ["Siječanj", "Veljača", "Ožujak", "Travanj", "Svibanj", "Lipanj", "Srpanj", "Kolovoz", "Rujan", "Listopad", "Studeni", "Prosinac"],
       activityPerMonth: "Mjesečna aktivnost",
       gender: { male: "Muško", female: "Žensko" },
@@ -178,7 +182,11 @@ const languages = [
       confirmDeletionText: "Da bi bili sigurni da želite izbrisati svoj račun, morate unijeti lozinku.",
       createdBy: "Napravio - Leo Petrović",
       noData1: "Nema podataka. Idite na ",
-      noData2: " 'Trening' da biste skupili statistike o svojoj aktivnosti."
+      noData: "Nema podataka.",
+      noData2: " 'Trening' da biste skupili statistike o svojoj aktivnosti.",
+      searchUsers: "Pretraži korisnike...",
+      loading: "Učitavanje",
+      editProfile: "Uredi profil"
     }
   }
 ];

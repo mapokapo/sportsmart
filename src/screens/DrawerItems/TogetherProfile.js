@@ -3,14 +3,12 @@ import { Text, View, ScrollView, ActivityIndicator, Dimensions, StyleSheet, Toas
 import { Image, Icon } from "react-native-elements";
 import { ProgressBar } from "react-native-paper";
 import * as colors from "../../media/colors";
-import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
-import { GraphRequest, GraphRequestManager } from "react-native-fbsdk";
 import { LineChart } from "react-native-chart-kit";
 
 const screenWidth = Math.round(Dimensions.get("window").width);
 
-export default class ProfileScreen extends Component {
+export default class TogetherProfile extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -22,54 +20,31 @@ export default class ProfileScreen extends Component {
   }
 
   componentDidMount = () => {
-    this.unsubscribe = auth().onAuthStateChanged(async user => {
-      if (user) {
-        if (user.providerData[0].providerId === "facebook.com") {
-          const infoRequest = new GraphRequest(
-            "/me?fields=name,email,picture.type(large)",
-            null,
-            (err, res) => {
-              if (err) return;
-              this.setState({ userData: { name: res.name, email: res.email, profileImage: res.picture.data.url } });
-            }
-          );
-          new GraphRequestManager().addRequest(infoRequest).start();
-        } else if (user.providerData[0].providerId === "google.com") {
-          this.setState({ userData: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
-        } else {
-          let getLastMonths = n => {
-            const months = this.props.screenProps.currentLang.labels.months;
-            let last_n_months = [];
-            const date = new Date();
-            for(let i = 0; i < n; i++){
-              last_n_months[i] = months[date.getMonth()];
-              date.setMonth(date.getMonth()-1);
-            }
-            last_n_months.reverse();
-            return last_n_months;
-          }
-          firestore().collection("users").doc(user.uid).get().then(doc => {
-            if (!doc.exists) {
-              ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
-              return;
-            }
-            const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
-            const activity = data ? data.map(({ kjoules }) => kjoules) : [];
-            if (activity[activity.length - 1] > 500) {
-              const total = activity[activity.length - 1];
-              this.setState({ medals: [ ...this.state.medals, { icon: require("../../media/Medalje_01.png"), value: total }, { icon: require("../../media/Medalje_02.png"), value: total }, { icon: require("../../media/Medalje_03.png"), value: total } ] });
-            }
-            this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
-          });
-        }
-      } else {
-        ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
+    let getLastMonths = n => {
+      const months = this.props.screenProps.currentLang.labels.months;
+      let last_n_months = [];
+      const date = new Date();
+      for(let i = 0; i < n; i++){
+        last_n_months[i] = months[date.getMonth()];
+        date.setMonth(date.getMonth()-1);
       }
+      last_n_months.reverse();
+      return last_n_months;
+    }
+    firestore().collection("users").doc(this.props.navigation.getParam("userItem").item.uid).get().then(doc => {
+      if (!doc.exists) {
+        ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
+        return;
+      }
+      const { name, email, profileImage, gender, born, weight, height, unit } = this.props.navigation.getParam("userItem").item;
+      const { data } = doc.data();
+      const activity = data ? data.map(({ kjoules }) => kjoules) : [];
+      if (activity[activity.length - 1] > 500) {
+        const total = activity[activity.length - 1];
+        this.setState({ medals: [ ...this.state.medals, { icon: require("../../media/Medalje_01.png"), value: total }, { icon: require("../../media/Medalje_02.png"), value: total }, { icon: require("../../media/Medalje_03.png"), value: total } ] });
+      }
+      this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
     });
-  }
-
-  componentWillUnmount = () => {
-    if (this.unsubscribe) this.unsubscribe();
   }
 
   capitalize = (string) => {
@@ -78,7 +53,6 @@ export default class ProfileScreen extends Component {
 
   refreshMonthyData = () => {
     this.setState({ data: null, iconClicked: true }, () => {
-      const user = auth().currentUser;
       let getLastMonths = n => {
         const months = this.props.screenProps.currentLang.labels.months;
         let last_n_months = [];
@@ -90,12 +64,13 @@ export default class ProfileScreen extends Component {
         last_n_months.reverse();
         return last_n_months;
       }
-      firestore().collection("users").doc(user.uid).get().then(doc => {
+      firestore().collection("users").doc(this.props.navigation.getParam("userItem").item.uid).get().then(doc => {
         if (!doc.exists) {
           ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
           return;
         }
-        const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
+        const { name, email, profileImage, gender, born, weight, height, unit } = this.props.navigation.getParam("userItem").item;
+        const { data } = doc.data();
         this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
         setTimeout(() => this.setState({ iconClicked: false }), 600);
       });
@@ -183,7 +158,7 @@ export default class ProfileScreen extends Component {
                     }}
                   />
                 </View>) : (this.state.iconClicked === true ? (<View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View>) : (this.state.userData.gender ? (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.light} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
+                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData}</Text>
                 </View>) : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center", paddingHorizontal: 15 }}>
                 <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.errors.thirdPartyPassResetError}</Text>
                 </View>)))}

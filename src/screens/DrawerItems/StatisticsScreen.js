@@ -154,7 +154,7 @@ export default class StatisticsScreen extends Component {
   }
 
   renderItem = ({ item, index }) => {
-    return <View key={index.toString()} style={{ width: item.main ? screenWidth : screenWidth/2, justifyContent: "center", alignItems: "center" }}>
+    return <View key={index.toString()} style={{ width: item.main ? screenWidth : screenWidth/2, justifyContent: "center", alignItems: "center", marginVertical: 5 }}>
       <Text style={styles.title}>{item.title}</Text>
       <LineChart
         yLabelsOffset={2}
