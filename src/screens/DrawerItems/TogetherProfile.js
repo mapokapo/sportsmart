@@ -20,16 +20,16 @@ export default class TogetherProfile extends Component {
   }
 
   componentDidMount = () => {
-    let getLastMonths = n => {
-      const months = this.props.screenProps.currentLang.labels.months;
-      let last_n_months = [];
+    let getLastDays = n => {
+      const days = this.props.screenProps.currentLang.labels.days;
+      let last_n_days = [];
       const date = new Date();
       for(let i = 0; i < n; i++){
-        last_n_months[i] = months[date.getMonth()];
-        date.setMonth(date.getMonth()-1);
+        last_n_days[i] = days[date.getDay()];
+        date.setDate(date.getDate()-1);
       }
-      last_n_months.reverse();
-      return last_n_months;
+      last_n_days.reverse();
+      return last_n_days;
     }
     firestore().collection("users").doc(this.props.navigation.getParam("userItem").item.uid).get().then(doc => {
       if (!doc.exists) {
@@ -39,11 +39,21 @@ export default class TogetherProfile extends Component {
       const { name, email, profileImage, gender, born, weight, height, unit } = this.props.navigation.getParam("userItem").item;
       const { data } = doc.data();
       const activity = data ? data.map(({ kjoules }) => kjoules) : [];
-      if (activity[activity.length - 1] > 500) {
+      if (activity[activity.length - 1] > 2000) {
         const total = activity[activity.length - 1];
-        this.setState({ medals: [ ...this.state.medals, { icon: require("../../media/Medalje_01.png"), value: total }, { icon: require("../../media/Medalje_02.png"), value: total }, { icon: require("../../media/Medalje_03.png"), value: total } ] });
+        function pushToArray(arr, obj) {
+          const index = arr.findIndex((e) => e.value === obj.value);
+          if (index === -1) {
+              arr.push(obj);
+          } else {
+              arr[index] = obj;
+          }
+        }
+        let medals = this.state.medals;
+        pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
+        this.setState({ medals });
       }
-      this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+      this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
     });
   }
 
@@ -51,18 +61,18 @@ export default class TogetherProfile extends Component {
     return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
-  refreshMonthyData = () => {
+  refreshData = () => {
     this.setState({ data: null, iconClicked: true }, () => {
-      let getLastMonths = n => {
-        const months = this.props.screenProps.currentLang.labels.months;
-        let last_n_months = [];
+      let getLastDays = n => {
+        const days = this.props.screenProps.currentLang.labels.days;
+        let last_n_days = [];
         const date = new Date();
         for(let i = 0; i < n; i++){
-          last_n_months[i] = months[date.getMonth()];
-          date.setMonth(date.getMonth()-1);
+          last_n_days[i] = days[date.getDay()];
+          date.setDate(date.getDate()-1);
         }
-        last_n_months.reverse();
-        return last_n_months;
+        last_n_days.reverse();
+        return last_n_days;
       }
       firestore().collection("users").doc(this.props.navigation.getParam("userItem").item.uid).get().then(doc => {
         if (!doc.exists) {
@@ -71,7 +81,22 @@ export default class TogetherProfile extends Component {
         }
         const { name, email, profileImage, gender, born, weight, height, unit } = this.props.navigation.getParam("userItem").item;
         const { data } = doc.data();
-        this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastMonths(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+        const activity = data ? data.map(({ kjoules }) => kjoules) : [];
+        if (activity[activity.length - 1] > 2000) {
+          const total = activity[activity.length - 1];
+          function pushToArray(arr, obj) {
+            const index = arr.findIndex((e) => e.value === obj.value);
+            if (index === -1) {
+                arr.push(obj);
+            } else {
+                arr[index] = obj;
+            }
+          }
+          let medals = this.state.medals;
+          pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
+          this.setState({ medals });
+        }
+        this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
         setTimeout(() => this.setState({ iconClicked: false }), 600);
       });
     });
@@ -97,9 +122,8 @@ export default class TogetherProfile extends Component {
                   <Text style={styles.profileTextBig}>{this.state.userData.name}</Text>
                   <Text style={styles.profileText}>{this.state.userData.email}</Text>
                   {this.state.userData.born && (<Text style={styles.profileText}>{this.state.userData.born}</Text>)}
-              <View style={{ flexDirection: "row" }}>{this.state.medals.map((medal, index) => (
-                <Image key={index} style={{ width: 21, height: 33, marginHorizontal: 5 }} source={medal.icon} />
-              ))}</View>
+                  {!this.state.iconClicked ? (<View style={{ flexDirection: "row" }}>{this.state.medals.map((medal, index) => (<Image key={index} style={{ width: 21, height: 33, marginHorizontal: 5 }} source={medal.icon} />))}
+                  </View>) : <ActivityIndicator size="small" color={colors.dark} />}
                 </View>
               </>)
             }
@@ -116,14 +140,14 @@ export default class TogetherProfile extends Component {
                 </View>)}
                 {this.state.userData && this.state.data && !this.state.iconClicked ? (
                   <View style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
-                    <Text style={{ color: colors.light, fontSize: 28, textAlign: "center", marginBottom: -12, marginTop: -10 }}>{this.props.screenProps.currentLang.labels.activityPerMonth}</Text>
+                    <Text style={{ color: colors.light, fontSize: 28, textAlign: "center", marginBottom: -12, marginTop: -10 }}>{this.props.screenProps.currentLang.labels.activityPerDay}</Text>
                     <ProgressBar
                       color={colors.red}
                       progress={this.state.userData.data[this.state.userData.data.length - 1].kjoules / 10000}
                       style={{ width: screenWidth/1.5, marginBottom: -15 }}
                     />
                     {this.state.userData.gender && (
-                      <Icon name="refresh" onPress={() => this.refreshMonthyData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />
+                      <Icon name="refresh" onPress={() => this.refreshData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />
                     )}
                   </View>
                 ) : (this.state.iconClicked === true ? (

@@ -84,7 +84,7 @@ const BottomTabNavigator = createStackNavigator({
 /* Switch 1 */
 const DrawerNavigator = createDrawerNavigator({
   Tabs: BottomTabNavigator,
-  Together: createStackNavigator({
+  Users: createStackNavigator({
     Together: {
       screen: TogetherScreen,
       navigationOptions: {

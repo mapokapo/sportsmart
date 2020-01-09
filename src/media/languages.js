@@ -27,7 +27,9 @@ const languages = [
       mapError: "Unknown error with location: \n\n",
       mapPermError: "You must allow location permissions to use maps.",
       passIncorrect: "Incorrect password.",
-      tooManyAttempts: "Too many password attempts. Try again later."
+      tooManyAttempts: "Too many password attempts. Try again later.",
+      titleEmptyError: "Please fill in the title field.",
+      descEmptyError: "Please fill in the description field."
     },
     labels: {
       error: "Error",
@@ -38,7 +40,7 @@ const languages = [
       locationPermissionTitle: "Sportsmart requires your location permission",
       locationPermissionText: "Sportsmart needs access to your location in order to track your walking distance.",
       resetPassScreenText: "Please enter your registered Email to reset your password.",
-      together: "Together",
+      users: "Users",
       activity: "Activity",
       calories: "Calories",
       duration: "Duration",
@@ -75,8 +77,8 @@ const languages = [
       finish: "Finish",
       delete: "Delete",
       alarmSet: "Alarm set for {0} hour/s and {1} minute/s",
-      months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-      activityPerMonth: "Monthly Activity",
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      activityPerDay: "Daily Activity",
       gender: { male: "Male", female: "Female" },
       noNotifiers: "You currently have no notifiers set.",
       changeLanguage: "Change language",
@@ -92,7 +94,12 @@ const languages = [
       noData: "No data.",
       searchUsers: "Search Users...",
       loading: "Loading",
-      editProfile: "Edit profile"
+      editProfile: "Edit profile",
+      supportText: "If you had any diffculty using our app, we would appreciate if you would describe the problem you encountered in detail.",
+      supportTitle: "Report subject",
+      supportDesc: "Detailed problem description (device operating system, in which part of the app did the problem occur and when, and how to reproduce the problem)",
+      title: "Title",
+      supportSubmit: "Thank you for submitting a report!"
     }
   },
   {
@@ -123,7 +130,9 @@ const languages = [
       mapError: "Nepoznata greška sa lokacijom: \n\n",
       mapPermError: "Morate dozvoliti pristup lokaciji da biste koristili mapu.",
       passIncorrect: "Netočna lozinka.",
-      tooManyAttempts: "Previše pokušaja za upis lozinke. Pokušajte ponovo kasnije."
+      tooManyAttempts: "Previše pokušaja za upis lozinke. Pokušajte ponovo kasnije.",
+      titleEmptyError: "Molimo vas ispunite polje za naslov.",
+      descEmptyError: "Molimo vas ispunite polje za opis."
     },
     labels: {
       error: "Greška",
@@ -134,7 +143,7 @@ const languages = [
       locationPermissionTitle: "Sportsmart zahtijeva pristup vašoj lokaciji.",
       locationPermissionText: "Sportsmartu treba pristup vašoj lokaciji da biste mogli pratiti korake i udaljenost.",
       resetPassScreenText: "Molimo vas da unesete vaš prijavljeni Email da biste promjenili lozinku.",
-      together: "Zajedno",
+      users: "Korisnici",
       activity: "Aktivnost",
       calories: "Kalorije",
       duration: "Trajanje",
@@ -168,8 +177,8 @@ const languages = [
       finish: "Završi",
       delete: "Izbriši",
       alarmSet: "Vrijeme postavljeno za {0} sat/i i {1} minut/a",
-      months: ["Siječanj", "Veljača", "Ožujak", "Travanj", "Svibanj", "Lipanj", "Srpanj", "Kolovoz", "Rujan", "Listopad", "Studeni", "Prosinac"],
-      activityPerMonth: "Mjesečna aktivnost",
+      days: ["Ponedjeljak", "Utorak", "Srijeda", "Četvrtak", "Petak", "Subota", "Nedjelja"],
+      activityPerDay: "Dnevna aktivnost",
       gender: { male: "Muško", female: "Žensko" },
       genderText: "Spol",
       noNotifiers: "Trenutno nemate nijednu obavijest postavljenu.",
@@ -186,7 +195,12 @@ const languages = [
       noData2: " 'Trening' da biste skupili statistike o svojoj aktivnosti.",
       searchUsers: "Pretraži korisnike...",
       loading: "Učitavanje",
-      editProfile: "Uredi profil"
+      editProfile: "Uredi profil",
+      supportText: "Ako imate ikakvih poteškoća tijekom korištenja aplikacije, molimo vas da nam pošaljete detaljnu prijavu problema u formularu ispod.",
+      supportTitle: "Kratki naslov prijave",
+      supportDesc: "Detaljni opis problema (operativni sustav uređaja, gdje se u aplikaciji dogodila pogreška i kada, i kako se problem može reproducirati)",
+      title: "Naslov",
+      supportSubmit: "Hvala vam na podršci!"
     }
   }
 ];

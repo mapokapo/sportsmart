@@ -12,7 +12,7 @@ export default class DrawerComponent extends Component {
     super(props);
     this.state = {
       drawerItems: [
-        "Together",
+        "Users",
         "Statistics",
         "Settings",
         "Support"

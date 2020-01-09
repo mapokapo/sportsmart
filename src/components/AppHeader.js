@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { LayoutAnimation } from "react-native";
+import { LayoutAnimation, Keyboard } from "react-native";
 import { Appbar, Surface } from "react-native-paper";
 import { SearchBar, Icon } from "react-native-elements";
 import * as colors from "../media/colors";
@@ -22,9 +22,11 @@ export default class AppHeader extends Component {
             onPress={() => {
               LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
               if (this.state.setting === "back2") {
+                Keyboard.dismiss();
                 this.props.navigation.navigate("Running");
                 return;
               }
+              Keyboard.dismiss();
               this.state.setting === "Tabs" || this.state.setting === true || this.state.setting === "back1" ? this.props.navigation.goBack() : this.props.navigation.toggleDrawer();
             }}
           />

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Dimensions, View, StyleSheet, ScrollView, PermissionsAndroid, Text, ToastAndroid, ActivityIndicator } from "react-native";
+import { Dimensions, View, StyleSheet, ScrollView, PermissionsAndroid, Text, ToastAndroid, ActivityIndicator, Keyboard } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { Button } from "react-native-elements";
 import * as colors from "../../media/colors";
@@ -119,6 +119,7 @@ export default class RunningScreen extends Component {
   }
 
   componentDidMount() {
+    Keyboard.dismiss();
     this._mounted = true;
     this.unsubscribe = auth().onAuthStateChanged(async user => {
       if (user && user.providerData[0].providerId === "password") {
@@ -216,7 +217,7 @@ export default class RunningScreen extends Component {
         const totalTime = this.state.duration / 3600;  // hours
         const totalDistance = this.state.position.distance;  // km
         const speed = Math.round((totalDistance/totalTime)*2)/2;
-        let metValues = [5.3, 5.8, 6.2, 6.7, 7.2, 7.7, 8.1, 8.6, 9.1, 9.6, 10.0, 10.5, 11.0, 11.5, 12.0, 12.4, 12.9, 13.4, 13.9, 14.3, 14.8, 15.3, 15.8, 16.2, 16.7, 17.2, 17.7, 18.1, 18.6, 19.1, 19.6, 20.0, 20.5, 21.0, 21.5, 22.0, 22.4, 22.9, 23.4, 23.9];
+        let metValues = [2.4, 2.9, 3.4, 3.9, 4.3, 4.8, 5.3, 5.8, 6.2, 6.7, 7.2, 7.7, 8.1, 8.6, 9.1, 9.6, 10.0, 10.5, 11.0, 11.5, 11.9, 12.3, 12.8, 13.3, 13.7, 14.2, 14.7, 15.2, 15.6, 16.1, 16.6, 17.1, 17.5, 18.0, 18.5, 19.0, 19.4, 19.9, 20.4, 20.9, 21.3, 21.8, 22.3, 22.8, 23.2, 23.7];
         let finalMetValue;
         if (speed < 5) {
           finalMetValue = metValues[0];
@@ -244,14 +245,14 @@ export default class RunningScreen extends Component {
       const age = getAge(born);
       let v;
       if (gender === "male") {
-        if (unit === "metric") v = 66.5 + (13.75 * weight) + (5.003 * height * 100) - (6.775 * age);
+        if (unit === "metric") v = 66.5 + (13.75 * weight) + (5.003 * height) - (6.775 * age);
         else v = 65 + (6.2 * weight) + (12.7 * height) - (6.8 * age);
       }else {
-        if (unit === "metric") v = 655.1 + (9.563 * weight) + (1.85 * height * 100) - (4.676 * age);
+        if (unit === "metric") v = 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
         else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
       }
       const mets = getMets();
-      let x = Math.round(((v / 24) * mets * (this.state.duration / 3600)) * 2) / 2; // kcal, rounded
+      let x = Math.round(((v / 24) * (this.state.duration / 3600) + mets * (this.state.duration / 3600)) * 2) / 2; // kcal, rounded
       this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2, prevKj: this.state.kjoules, prevkcal: this.state.kcal }, async () => {
         const doc = await firestore().collection("users").doc(this.state.userData.uid).get();
         const mData = doc.data().data || [];  // modified data - array of objects that's about to change
@@ -260,7 +261,7 @@ export default class RunningScreen extends Component {
           const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
           return Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
         }
-        // store only last 5 months worth of info about activity, and also update last month with activity info
+        // store only last 5 days worth of info about activity, and also update last day with activity info
         if (mData.length === 0) { // if there is no data for the user
           let newObj = {
             kjoules: this.state.kjoules,
@@ -270,7 +271,7 @@ export default class RunningScreen extends Component {
             date: new Date().toString()
           };
           mData.push(newObj);
-        } else if (dateDiffInDays(new Date(mData[mData.length - 1].date), new Date()) > 30) { // if 30 days have passed since previous update object
+        } else if (dateDiffInDays(new Date(mData[mData.length - 1].date), new Date()) > 1) { // if 1 day has passed since previous update object
           let newObj = {
             kjoules: this.state.kjoules,
             kcal: this.state.kcal,

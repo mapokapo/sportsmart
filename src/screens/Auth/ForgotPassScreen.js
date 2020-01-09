@@ -71,7 +71,7 @@ export default class ForgotPassScreen extends Component {
   render() {
     return (
       <View style={styles.mainWrapper}>
-        <Text style={{ color: colors.dark, fontSize: 18 }}>{this.props.screenProps.currentLang.labels.resetPassScreenText}</Text>
+        <Text style={{ color: colors.dark, fontSize: 18, textAlign: "center" }}>{this.props.screenProps.currentLang.labels.resetPassScreenText}</Text>
         <TextInput
           keyboardType="email-address"
           textContentType="emailAddress"

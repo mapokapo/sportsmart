@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Text, FlatList, View, StyleSheet, ToastAndroid, UIManager, LayoutAnimation, TouchableOpacity, PermissionsAndroid, Picker, Platform } from "react-native";
+import { Text, FlatList, View, StyleSheet, ToastAndroid, UIManager, LayoutAnimation, TouchableOpacity, PermissionsAndroid, Picker, Platform, Keyboard } from "react-native";
 import AppHeader from "../../components/AppHeader";
 import * as colors from "../../media/colors";
 import { ListItem, Button, Image, Icon, Input } from "react-native-elements";
@@ -47,6 +47,7 @@ export default class SettingsScreen extends Component {
       heightError: false,
       bornError: false,
       unit: "metric",
+      uid: null,
       gender: "male",
       passText: "",
       datePickerOpen: false,
@@ -66,7 +67,7 @@ export default class SettingsScreen extends Component {
           icon: "edit",
           iconColor: colors.blue,
           onClick: () => {
-            this.setState({ modalVisible: true, modalContent: "editProfile" });
+            if (this.state.uid) this.setState({ modalVisible: true, modalContent: "editProfile" });
           }
         },
         {
@@ -211,6 +212,15 @@ export default class SettingsScreen extends Component {
 
   componentDidMount = () => {
     this._mounted = true;
+    const user = auth().currentUser;
+    if (user) {
+      firestore().collection("users").doc(user.uid).get().then(doc => {
+        if (doc.exists) {
+          let { profileImage, name, gender, unit, weight, height, born, bio, uid } = doc.data();
+          this.setState({ uid: uid, profileImage, nameText: name, gender, unit, weightText: weight.toString(), heightText: height.toString(), bornText: new Date(born), bioText: bio });
+        }
+      });
+    }
   }
 
   componentWillUnmount = () => {
@@ -226,7 +236,7 @@ export default class SettingsScreen extends Component {
   renderItem = ({ item }) => {
     return <ListItem
       containerStyle={{ backgroundColor: colors.light, opacity: item.opacity ? item.opacity : 1 }}
-      title={<Text style={{ ...styles.listItemText, color: item.dangerous ? colors.red : undefined }}>{this.capitalize(item.title)}</Text>}
+      title={<Text style={{ ...styles.listItemText, color: item.dangerous ? colors.red : colors.dark }}>{this.capitalize(item.title)}</Text>}
       rightTitle={item.value ? <Text style={{ ...styles.listItemText, opacity: 0.6 }}>{this.capitalize(item.value)}</Text> : undefined}
       leftIcon={{ type: "material", name: item.icon, color: item.iconColor, size: 30 }}
       onPress={() => {
@@ -323,6 +333,123 @@ export default class SettingsScreen extends Component {
     });
   }
 
+  nameCheck = (text) => {
+    return /^[a-zA-Z ]+$/g.test(text);
+  }
+
+  weightCheck = (text) => {
+    return /^\d+\.?\d+$/g.test(text);
+  }
+
+  heightCheck = (text) => {
+    return /^\d+\.?\d+$/g.test(text);
+  }
+
+  ageCheck = (born) => {
+    return born.getTime() !== 0;
+  }
+
+  handleAccountUpdate = () => {
+    if (this.state.nameText === "") {
+      this.setState({ nameError: true }, () => {
+        ToastAndroid.show(this.props.screenProps.currentLang.errors.nameEmpty, ToastAndroid.SHORT);
+      });
+      return;
+    }
+    if (!this.nameCheck(this.state.nameText)) {
+      this.setState({ nameError: true }, () => {
+        ToastAndroid.show(this.props.screenProps.currentLang.errors.nameInvalid, ToastAndroid.SHORT);
+      })
+      return;
+    }
+    if (this.state.heightText === "") {
+      this.setState({ heightError: true }, () => {
+        ToastAndroid.show(this.props.screenProps.currentLang.errors.heightEmpty, ToastAndroid.SHORT);
+      })
+      return;
+    }
+    if (!this.heightCheck(this.state.heightText)) {
+      this.setState({ heightError: true }, () => {
+        ToastAndroid.show(this.props.screenProps.currentLang.errors.heightInvalid, ToastAndroid.SHORT);
+      })
+      return;
+    }
+    if (this.state.weightText === "") {
+      this.setState({ weightError: true }, () => {
+        ToastAndroid.show(this.props.screenProps.currentLang.errors.weightEmpty, ToastAndroid.SHORT);
+      })
+      return;
+    }
+    if (!this.weightCheck(this.state.weightText)) {
+      this.setState({ weightError: true }, () => {
+        ToastAndroid.show(this.props.screenProps.currentLang.errors.weightInvalid, ToastAndroid.SHORT);
+      })
+      return;
+    }
+    if (!this.ageCheck(this.state.bornText)) {
+      this.setState({ bornError: true }, () => {
+        ToastAndroid.show(this.props.screenProps.currentLang.errors.ageEmpty, ToastAndroid.SHORT);
+      })
+      return;
+    }
+    this.setState({ loading: true }, () => {
+      let dbUpload = async () => {
+        firestore().collection("users").doc(this.state.uid).update({
+          name: this.state.nameText,
+          bio: this.state.bioText,
+          weight: Number(this.state.weightText),
+          height: Number(this.state.heightText),
+          profileImage: this.state.profileImage,
+          unit: this.state.unit,
+          born: this.state.bornText.toDateString(),
+          gender: this.state.gender
+        }).then(() => {
+          Keyboard.dismiss();
+          this.setState({ loading: false, modalVisible: false, modalContent: null });
+        }).catch(err => {
+          switch(err.code) {
+            case "auth/unknown":
+              ToastAndroid.show(this.props.screenProps.currentLang.errors.networkError, ToastAndroid.SHORT);
+              break;
+            default:
+              ToastAndroid.show(this.props.screenProps.currentLang.errors.unhandledError + err.message, ToastAndroid.LONG);
+          }
+          this.setState({ loading: false });
+        });
+      }
+      let ref = storage().ref("profileImages/").child(this.state.uid);
+      let ext = this.state.profileImage.uri ? this.state.profileImage.path.split(".")[1] : "png";
+      ref.putFile(this.state.profileImage.uri ? this.state.profileImage.path : "", { contentType: `image/${ext}` }).then(() => {
+        ref.getDownloadURL().then(url => {
+          let finalUrl = url;
+          if (!this.state.profileImage.uri) {
+            finalUrl = this.state.profileImage;
+          }
+          this.setState({ profileImage: finalUrl }, () => dbUpload());
+        }).catch(err => {
+          switch(err.code) {
+            case "auth/unknown":
+              ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
+              break;
+            default:
+              ToastAndroid.show(this.props.screenProps.currentLang.errors.imageUnhandledError + err.message, ToastAndroid.LONG);
+          }
+          dbUpload();
+        })
+      }).catch(err => {
+        if (this.state.profileImage.uri)
+          switch(err.code) {
+            case "auth/unknown":
+              ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError, ToastAndroid.LONG);
+              break;
+            default:
+              ToastAndroid.show(this.props.screenProps.currentLang.errors.imageNetworkError + err.message, ToastAndroid.LONG);
+          }
+        dbUpload();
+      });
+    });
+  }
+
   renderModal = () => {
     switch(this.state.modalContent) {
       case "lang":
@@ -333,12 +460,13 @@ export default class SettingsScreen extends Component {
               <RadioButton.Group
                 onValueChange={value => {
                   this.props.screenProps.changeLanguage(value, () => {
-                    let newItems = this.state.items;
+                    let newItems = this.state.items; // 
                     newItems[0] = { ...newItems[0], value: this.props.screenProps.currentLang.name, title: this.props.screenProps.currentLang.labels.language };
-                    newItems[1] = { ...newItems[1], title: this.props.screenProps.currentLang.labels.disableAllNotifs };
-                    newItems[2] = { ...newItems[2], title: this.props.screenProps.currentLang.labels.resetPass };
-                    newItems[3] = { ...newItems[3], title: this.props.screenProps.currentLang.labels.logOut };
-                    newItems[4] = { ...newItems[3], title: this.props.screenProps.currentLang.labels.deleteAccount };
+                    newItems[1] = { ...newItems[1], title: this.props.screenProps.currentLang.labels.editProfile };
+                    newItems[2] = { ...newItems[2], title: this.props.screenProps.currentLang.labels.disableAllNotifs };
+                    newItems[3] = { ...newItems[3], title: this.props.screenProps.currentLang.labels.resetPass };
+                    newItems[4] = { ...newItems[4], title: this.props.screenProps.currentLang.labels.logOut };
+                    newItems[5] = { ...newItems[5], title: this.props.screenProps.currentLang.labels.deleteAccount };
                     this.setState({ language: value, items: newItems });
                   });
                 }}
@@ -372,7 +500,6 @@ export default class SettingsScreen extends Component {
                 onSubmitEditing={this.handleAccountDelete}
                 blurOnSubmit={false}
                 onChangeText={text => this.setState({ passText: text, passError: false })}
-                autoFocus
                 onFocus={() => this.setState({ passError: false }, () => {
                   LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                 })}
@@ -400,7 +527,7 @@ export default class SettingsScreen extends Component {
       case "editProfile":
         return (
           <>
-            <Dialog.Title style={{ ...styles.bigText, flexGrow: 1, marginTop: 10, marginBottom: 5 }}>{this.props.screenProps.currentLang.labels.editProfile}</Dialog.Title>
+            <Dialog.Title style={{ ...styles.bigText, flexGrow: 1, marginTop: 10, marginBottom: 10 }}>{this.props.screenProps.currentLang.labels.editProfile}</Dialog.Title>
             <Dialog.Content style={{ flexGrow: 1 }}>
               <View style={{ flexGrow: 1, flexDirection: "row", display: "flex", marginTop: -25 }}>
                 <View style={{ width: 150, height: 150, marginRight: 10, display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -417,7 +544,7 @@ export default class SettingsScreen extends Component {
                       <Icon name="add-a-photo" size={125} color={colors.dark} />
                     ) : (
                       <Image
-                        source={{ uri: this.state.profileImage.uri }}
+                        source={{ uri: this.state.profileImage.uri ? this.state.profileImage.uri : this.state.profileImage }}
                         style={{ width: 125, height: 125 }}
                         containerStyle={{ overflow: "hidden", borderRadius: 125/2, elevation: 1 }}
                         placeholderStyle={{ display: "none" }}
@@ -440,15 +567,14 @@ export default class SettingsScreen extends Component {
                     labelStyle={{ margin: 0, padding: 0, marginBottom: -8 }}
                     blurOnSubmit={false}
                     onChangeText={text => this.setState({ nameText: text, nameError: false })}
-                    autoFocus
                     onFocus={() => this.setState({ nameError: false }, () => {
                       LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     })}
                   />
-                  <View style={{ borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 5, marginLeft: 5, height: 40 }}>
-                    <Text style={{ width: 35, position: "relative", top: -11, left: 10, backgroundColor: colors.white, paddingVertical: 1, paddingHorizontal: 5 }}>Unit</Text>
+                  {this.props.screenProps.currentLang.name === "english" ? (<View style={{ borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 5, marginLeft: 5, height: 40 }}>
+                    <Text style={{ color: colors.dark, width: 35, position: "relative", top: -11, left: 10, backgroundColor: colors.white, paddingVertical: 1, paddingHorizontal: 5 }}>Unit</Text>
                     <Picker
-                      style={{ margin: 0, padding: 0, marginTop: -25 }}
+                      style={{ color: colors.dark, margin: 0, padding: 0, marginTop: -25 }}
                       mode="dropdown"
                       selectedValue={this.state.unit}
                       onValueChange={(itemValue) => {
@@ -457,7 +583,7 @@ export default class SettingsScreen extends Component {
                       <Picker.Item label="Metric" value="metric" />
                       <Picker.Item label="Imperial" value="imperial" />
                     </Picker>
-                  </View>
+                  </View>) : <Button onPress={() => this.setState({ datePickerOpen: true })} raised titleStyle={{ textAlign: "center", color: colors.dark, fontWeight: "bold", flexGrow: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: 0, marginBottom: 0, backgroundColor: colors.light, flexGrow: 1 }} containerStyle={{ display: "flex", flexGrow: 1, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginBottom: 20 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString(this.state.unit === "metric" ? "en-GB" : "en-US") : this.props.screenProps.currentLang.labels.born} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />}
                 </View>
               </View>
               <Input
@@ -521,7 +647,7 @@ export default class SettingsScreen extends Component {
                   </View>
                 </View>
               </View>
-              <Button onPress={() => this.setState({ datePickerOpen: true })} raised titleStyle={{ textAlign: "center", color: colors.dark, fontWeight: "bold", flexGrow: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: 0, marginBottom: 0, backgroundColor: colors.light, flexGrow: 1 }} containerStyle={{ display: "flex", flexGrow: 1, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginVertical: 10 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString(this.state.unit === "metric" ? "en-GB" : "en-US") : this.props.screenProps.currentLang.labels.born} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />
+              {this.props.screenProps.currentLang.name === "english" && (<Button onPress={() => this.setState({ datePickerOpen: true })} raised titleStyle={{ textAlign: "center", color: colors.dark, fontWeight: "bold", flexGrow: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: 0, marginBottom: 0, backgroundColor: colors.light, flexGrow: 1 }} containerStyle={{ display: "flex", flexGrow: 1, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginVertical: 10 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString(this.state.unit === "metric" ? "en-GB" : "en-US") : this.props.screenProps.currentLang.labels.born} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />)}
               {this.state.datePickerOpen && (<DateTimePicker
                 value={this.state.bornText}
                 mode="date"
@@ -537,6 +663,7 @@ export default class SettingsScreen extends Component {
                 title={this.props.screenProps.currentLang.labels.finish}
                 type="solid"
                 raised
+                onPress={() => this.handleAccountUpdate()}
                 loading={this.state.loading}
               />
             </Dialog.Content>
