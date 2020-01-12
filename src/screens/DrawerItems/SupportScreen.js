@@ -73,7 +73,7 @@ export default class SupportScreen extends Component {
 
   handleReport = () => {
     if (this.state.currentTimeout === null) {
-      this.setState({ currentTimeout: setTimeout(() => this.setState({ currentTimeout: null }), 15000) }, () => {
+      this.setState({ currentTimeout: setTimeout(() => this.setState({ currentTimeout: null }), 30000) }, () => {
         this.unsubscribe = auth().onAuthStateChanged(user => {
           if (user) {
             if (!this.checkTitle()) {
@@ -89,7 +89,7 @@ export default class SupportScreen extends Component {
               return;
             }
             functions().httpsCallable("sendMail")({
-              lang: this.props.screenProps.currentLang.name === "hrvatski" ? "hr" : "en",
+              lang: this.props.screenProps.currentLang.name === "lokalni (BiH)" ? "hr" : "en",
               dest: user.email,
               reportData: {
                 title: this.state.title,
@@ -101,6 +101,8 @@ export default class SupportScreen extends Component {
           }
         });
       });
+    } else {
+      ToastAndroid.show(this.props.screenProps.currentLang.labels.supportSubmitTimeout, ToastAndroid.LONG);
     }
   }
 

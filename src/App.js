@@ -30,6 +30,7 @@ import SupportScreen from "./screens/DrawerItems/SupportScreen";
 /* SWITCH 2 */
 import LoadingScreen from "./screens/Auth/LoadingScreen";
 import LoginScreen from "./screens/Auth/LoginScreen";
+import AdditionalInfoScreen from "./screens/Auth/AdditionalInfoScreen";
 import RegisterScreen from "./screens/Auth/RegisterScreen";
 import ForgotPassScreen from "./screens/Auth/ForgotPassScreen";
 
@@ -112,6 +113,12 @@ const DrawerNavigator = createDrawerNavigator({
 const AuthStack = createStackNavigator({
   Login: {
     screen: LoginScreen,
+    navigationOptions: {
+      header: null
+    }
+  },
+  AdditionalInfo: {
+    screen: AdditionalInfoScreen,
     navigationOptions: {
       header: null
     }

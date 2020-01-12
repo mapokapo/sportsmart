@@ -139,13 +139,10 @@ export default class SettingsScreen extends Component {
           title: props.screenProps.currentLang.labels.deleteAccount,
           icon: "delete",
           iconColor: colors.red,
-          opacity: auth().currentUser.providerData[0].providerId === "password" ? 1 : 0.5,
+          opacity: 1,
           dangerous: true,
           onClick: () => {
-            if (auth().currentUser.providerData[0].providerId === "password")
-              this.setState({ modalVisible: true, modalContent: "delAcc" })
-            else
-              ToastAndroid.show(props.screenProps.currentLang.errors.thirdPartyPassResetError, ToastAndroid.LONG);
+            this.setState({ modalVisible: true, modalContent: "delAcc" })
           }
         }
       ]
@@ -237,7 +234,7 @@ export default class SettingsScreen extends Component {
     return <ListItem
       containerStyle={{ backgroundColor: colors.light, opacity: item.opacity ? item.opacity : 1 }}
       title={<Text style={{ ...styles.listItemText, color: item.dangerous ? colors.red : colors.dark }}>{this.capitalize(item.title)}</Text>}
-      rightTitle={item.value ? <Text style={{ ...styles.listItemText, opacity: 0.6 }}>{this.capitalize(item.value)}</Text> : undefined}
+      rightTitle={item.value ? <Text style={{ ...styles.listItemText, opacity: 0.6, width: "150%", textAlign: "right" }}>{this.capitalize(item.value)}</Text> : undefined}
       leftIcon={{ type: "material", name: item.icon, color: item.iconColor, size: 30 }}
       onPress={() => {
         item.onClick();
@@ -265,76 +262,99 @@ export default class SettingsScreen extends Component {
     let passTimeoutStartDate = await AsyncStorage.getItem("sportsmart-passTimeout");
     let flag = false;
     let date = new Date();
-    if (passTimeoutStartDate) {
-      passTimeoutStartDate = JSON.parse(passTimeoutStartDate);
-      if (date.getTime() - new Date(passTimeoutStartDate).getTime() <= this.state.currentPassTimeoutTime) {
-        flag = true;
+    const user = auth().currentUser;
+    if (user.providerData[0].providerId === "password") {
+      if (passTimeoutStartDate) {
+        passTimeoutStartDate = JSON.parse(passTimeoutStartDate);
+        if (date.getTime() - new Date(passTimeoutStartDate).getTime() <= this.state.currentPassTimeoutTime) {
+          flag = true;
+        }
       }
-    }
-    if (flag) {
-      const timeoutTime = date.getTime() - new Date(passTimeoutStartDate).getTime();
-      if (!this.state.currentPassTimeout) {
-        this.setState({ currentPassTimeout: setTimeout(() => {
+      if (flag) {
+        const timeoutTime = date.getTime() - new Date(passTimeoutStartDate).getTime();
+        if (!this.state.currentPassTimeout) {
+          this.setState({ currentPassTimeout: setTimeout(() => {
+            AsyncStorage.removeItem("sportsmart-passTimeout");
+            if (this._mounted) this.setState({ currentPassTimeout: null, passAttempts: 0 });
+          }, timeoutTime) });
+        }
+        this.setState({ passText: "", passError: false, modalVisible: false, modalContent: null }, () => {
+          ToastAndroid.show(this.props.screenProps.currentLang.errors.tooManyAttempts, ToastAndroid.LONG);
+        });
+        return;
+      }
+      if (this.state.passAttempts >= 5 && !this.state.currentPassTimeout) {
+        if (!JSON.parse(passTimeoutStartDate)) {
+          AsyncStorage.setItem("sportsmart-passTimeout", JSON.stringify(new Date().toString()));
+        }
+        setTimeout(() => {
           AsyncStorage.removeItem("sportsmart-passTimeout");
           if (this._mounted) this.setState({ currentPassTimeout: null, passAttempts: 0 });
-        }, timeoutTime) });
+        }, this.state.currentPassTimeoutTime);
+        this.setState({ passText: "", passError: false, modalVisible: false, modalContent: null }, () => {
+          ToastAndroid.show(this.props.screenProps.currentLang.errors.tooManyAttempts, ToastAndroid.LONG);
+        });
+        return;
       }
-      this.setState({ passText: "", passError: false, modalVisible: false, modalContent: null }, () => {
-        ToastAndroid.show(this.props.screenProps.currentLang.errors.tooManyAttempts, ToastAndroid.LONG);
-      });
-      return;
-    }
-    if (this.state.passAttempts >= 5 && !this.state.currentPassTimeout) {
-      if (!JSON.parse(passTimeoutStartDate)) {
-        AsyncStorage.setItem("sportsmart-passTimeout", JSON.stringify(new Date().toString()));
+      if (this.state.currentPassTimeout) {
+        this.setState({ passText: "", passError: false, modalVisible: false, modalContent: null }, () => {
+          ToastAndroid.show(this.props.screenProps.currentLang.errors.tooManyAttempts, ToastAndroid.LONG);
+        });
+        return;
       }
-      setTimeout(() => {
-        AsyncStorage.removeItem("sportsmart-passTimeout");
-        if (this._mounted) this.setState({ currentPassTimeout: null, passAttempts: 0 });
-      }, this.state.currentPassTimeoutTime);
-      this.setState({ passText: "", passError: false, modalVisible: false, modalContent: null }, () => {
-        ToastAndroid.show(this.props.screenProps.currentLang.errors.tooManyAttempts, ToastAndroid.LONG);
-      });
-      return;
-    }
-    if (this.state.currentPassTimeout) {
-      this.setState({ passText: "", passError: false, modalVisible: false, modalContent: null }, () => {
-        ToastAndroid.show(this.props.screenProps.currentLang.errors.tooManyAttempts, ToastAndroid.LONG);
-      });
-      return;
-    }
-    if (this.state.passText === "") {
-      this.setState({ passError: true }, () => {
-        this.triggerError(this.props.screenProps.currentLang.errors.passEmpty);
-      });
-      return;
+      if (this.state.passText === "") {
+        this.setState({ passError: true }, () => {
+          this.triggerError(this.props.screenProps.currentLang.errors.passEmpty);
+        });
+        return;
+      }
     }
     this.setState({ loading: true }, () => {
       const email = auth().currentUser.email;
-      auth().currentUser.reauthenticateWithCredential(auth.EmailAuthProvider.credential(email, this.state.passText)).then(user => {
-        firestore().collection("users").doc(user.user.uid).delete().then(() => {
-          storage().ref("profileImages").child(user.user.uid).delete().finally(() => {
+      if (auth().currentUser.providerData[0].providerId === "password") {
+        auth().currentUser.reauthenticateWithCredential(auth.EmailAuthProvider.credential(email, this.state.passText)).then(user => {
+          firestore().collection("users").doc(user.user.uid).delete().then(() => {
+            storage().ref("profileImages").child(user.user.uid).delete().finally(() => {
+              auth().currentUser.delete().then(() => {
+                this.deleteAllNotifiers();
+                this.props.navigation.navigate("Auth");
+              })
+            });
+          });
+        }).catch(err => {
+          if (err.message === "[auth/unknown] We have blocked all requests from this device due to unusual activity. Try again later. [ Too many unsuccessful login attempts. Please try again later. ]") {
+            this.setState({ passError: true, passAttempts: 6 });
+            this.triggerError(this.props.screenProps.currentLang.errors.tooManyAttempts);
+          }
+          this.setState({ passError: true, passAttempts: this.state.passAttempts + 1 });
+          this.triggerError(this.props.screenProps.currentLang.errors.passIncorrect);
+        }).finally(() => {
+          this.setState({ loading: false });
+        });
+      } else {
+        firestore().collection("users").doc(user.uid).delete().then(() => {
+          storage().ref("profileImages").child(user.uid).delete().finally(() => {
             auth().currentUser.delete().then(() => {
               this.deleteAllNotifiers();
               this.props.navigation.navigate("Auth");
             })
           });
+        }).catch(err => {
+          if (err.message === "[auth/unknown] We have blocked all requests from this device due to unusual activity. Try again later. [ Too many unsuccessful login attempts. Please try again later. ]") {
+            this.setState({ passError: true, passAttempts: 6 });
+            this.triggerError(this.props.screenProps.currentLang.errors.tooManyAttempts);
+          }
+          this.setState({ passError: true, passAttempts: this.state.passAttempts + 1 });
+          this.triggerError(this.props.screenProps.currentLang.errors.passIncorrect);
+        }).finally(() => {
+          this.setState({ loading: false });
         });
-      }).catch(err => {
-        if (err.message === "[auth/unknown] We have blocked all requests from this device due to unusual activity. Try again later. [ Too many unsuccessful login attempts. Please try again later. ]") {
-          this.setState({ passError: true, passAttempts: 6 });
-          this.triggerError(this.props.screenProps.currentLang.errors.tooManyAttempts);
-        }
-        this.setState({ passError: true, passAttempts: this.state.passAttempts + 1 });
-        this.triggerError(this.props.screenProps.currentLang.errors.passIncorrect);
-      }).finally(() => {
-        this.setState({ loading: false });
-      });
+      }
     });
   }
 
   nameCheck = (text) => {
-    return /^[a-zA-Z ]+$/g.test(text);
+    return /^[\-/A-Za-z\u00C0-\u017F ]+$/g.test(text);
   }
 
   weightCheck = (text) => {
@@ -485,8 +505,8 @@ export default class SettingsScreen extends Component {
           <>
             <Dialog.Title style={styles.bigText}>{this.props.screenProps.currentLang.labels.confirmDeletion}</Dialog.Title>
             <Dialog.Content>
-              <Text style={styles.normalText}>{this.props.screenProps.currentLang.labels.confirmDeletionText}</Text>
-              <TextInput
+              <Text style={styles.normalText}>{auth().currentUser.providerData[0].providerId === "password" ? this.props.screenProps.currentLang.labels.confirmDeletionText : this.props.screenProps.currentLang.labels.confirmDeletionText2}</Text>
+              {auth().currentUser.providerData[0].providerId === "password" && (<TextInput
                 autoCapitalize="none"
                 textContentType="password"
                 secureTextEntry={true}
@@ -509,7 +529,7 @@ export default class SettingsScreen extends Component {
                     underlineColor: "transparent", background: colors.white
                   }
                 }}
-              />
+              />)}
               {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
               <Button
                 titleStyle={{ color: colors.light }}

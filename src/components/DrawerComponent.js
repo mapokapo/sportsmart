@@ -5,7 +5,6 @@ import { Icon, Image } from "react-native-elements";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import * as colors from "../media/colors";
-import { GraphRequest, GraphRequestManager } from "react-native-fbsdk";
 
 export default class DrawerComponent extends Component {
   constructor(props) {
@@ -28,26 +27,11 @@ export default class DrawerComponent extends Component {
   componentDidMount() {
     this.unsubscribe = auth().onAuthStateChanged(async user => {
       if (user) {
-        if (user.providerData[0].providerId === "facebook.com") {
-          const infoRequest = new GraphRequest(
-            "/me?fields=name,email,picture.type(large)",
-            null,
-            (err, res) => {
-              if (err) return;
-              this.setState({ user: { name: res.name, email: res.email, profileImage: res.picture.data.url } });
-            }
-          );
-
-          new GraphRequestManager().addRequest(infoRequest).start();
-        } else if (user.providerData[0].providerId === "google.com") {
-          this.setState({ user: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
-        } else {
-          firestore().collection("users").doc(user.uid).get().then(doc => {
-            if (!doc.exists) ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
-            const { name, email, profileImage } = doc.data();
-            this.setState({ user: { name, email, profileImage } });
-          });
-        }
+        firestore().collection("users").doc(user.uid).get().then(doc => {
+          if (!doc.exists) ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
+          const { name, email, profileImage } = doc.data();
+          this.setState({ user: { name, email, profileImage } });
+        });
       }
     });
   }

@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UI
 import { Button, SocialIcon } from "react-native-elements";
 import { TextInput, Portal, Dialog, Menu, Divider, IconButton } from "react-native-paper";
 import auth from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
 import { AccessToken, LoginManager } from "react-native-fbsdk";
 import { GoogleSignin, statusCodes } from "@react-native-community/google-signin";
 import * as colors from "../../media/colors";
@@ -116,6 +117,9 @@ export default class LoginScreen extends Component {
           case "auth/user-not-found":
             this.triggerDialog(this.props.screenProps.currentLang.errors.userNotFound);
             break;
+          case "auth/wrong-password":
+            this.triggerDialog(this.props.screenProps.currentLang.errors.passIncorrect);
+            break;
           case "auth/unknown":
             this.triggerDialog(this.props.screenProps.currentLang.errors.networkError);
             break;
@@ -134,7 +138,7 @@ export default class LoginScreen extends Component {
           <Dialog visible={this.state.dialogText !== null} onDismiss={this.hideDialog}>
             <Dialog.Title>{this.props.screenProps.currentLang.labels.error}</Dialog.Title>
             <Dialog.Content>
-              <Text>{this.state.dialogText}</Text>
+              <Text style={{ color: colors.dark }}>{this.state.dialogText}</Text>
             </Dialog.Content>
           </Dialog>
         </Portal>
@@ -179,9 +183,17 @@ export default class LoginScreen extends Component {
                 const data = await AccessToken.getCurrentAccessToken();
                 if (result && data) {
                   const credential = auth.FacebookAuthProvider.credential(data.accessToken);
-                  auth().signInWithCredential(credential).then(() => {
-                    this.setState({ loading: false }, () => {
-                      this.props.navigation.navigate("App");
+                  auth().signInWithCredential(credential).then(user => {
+                    firestore().collection("users").doc(user.user.uid).get().then(doc => {
+                      if (doc.exists) {
+                        this.setState({ loading: false }, () => {
+                          this.props.navigation.navigate("App");
+                        });
+                      } else {
+                        this.setState({ loading: false }, () => {
+                          this.props.navigation.navigate("AdditionalInfo");
+                        });
+                      }
                     });
                   }).catch(err => {
                     if (err.code === "auth/account-exists-with-different-credential") {
@@ -207,9 +219,18 @@ export default class LoginScreen extends Component {
                   await GoogleSignin.hasPlayServices();
                   const userInfo = await GoogleSignin.signIn();
                   const credential = auth.GoogleAuthProvider.credential(userInfo.idToken, userInfo.accessToken);
-                  await auth().signInWithCredential(credential);
-                  this.setState({ loading: false }, () => {
-                    this.props.navigation.navigate("App");
+                  auth().signInWithCredential(credential).then(user => {
+                    firestore().collection("users").doc(user.user.uid).get().then(doc => {
+                      if (doc.exists) {
+                        this.setState({ loading: false }, () => {
+                          this.props.navigation.navigate("App");
+                        });
+                      } else {
+                        this.setState({ loading: false }, () => {
+                          this.props.navigation.navigate("AdditionalInfo");
+                        });
+                      }
+                    });
                   });
                 } catch (error) {
                   if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
@@ -238,7 +259,7 @@ export default class LoginScreen extends Component {
               returnKeyType="next"
               onSubmitEditing={() => this.login.current.focus()}
               blurOnSubmit={false}
-              onChangeText={text => this.setState({ emailText: text, emailError: false })}
+              onChangeText={text => this.setState({ emailText: text.replace(/ /g, ""), emailError: false })}
               onFocus={() => this.setState({ emailError: false, keyboardOpened: true }, () => {
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
               })}

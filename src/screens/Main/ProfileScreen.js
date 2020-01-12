@@ -5,7 +5,6 @@ import { ProgressBar } from "react-native-paper";
 import * as colors from "../../media/colors";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
-import { GraphRequest, GraphRequestManager } from "react-native-fbsdk";
 import { LineChart } from "react-native-chart-kit";
 
 const screenWidth = Math.round(Dimensions.get("window").width);
@@ -24,54 +23,59 @@ export default class ProfileScreen extends Component {
   componentDidMount = () => {
     this.unsubscribe = auth().onAuthStateChanged(async user => {
       if (user) {
-        if (user.providerData[0].providerId === "facebook.com") {
-          const infoRequest = new GraphRequest(
-            "/me?fields=name,email,picture.type(large)",
-            null,
-            (err, res) => {
-              if (err) return;
-              this.setState({ userData: { name: res.name, email: res.email, profileImage: res.picture.data.url } });
-            }
-          );
-          new GraphRequestManager().addRequest(infoRequest).start();
-        } else if (user.providerData[0].providerId === "google.com") {
-          this.setState({ userData: { name: user.displayName, email: user.email, profileImage: user.photoURL } });
-        } else {
-          let getLastDays = n => {
-            const days = this.props.screenProps.currentLang.labels.days;
-            let last_n_days = [];
-            const date = new Date();
-            for(let i = 0; i < n; i++){
-              last_n_days[i] = days[date.getDay()];
-              date.setDate(date.getDate()-1);
-            }
-            last_n_days.reverse();
-            return last_n_days;
+        let getLastDays = n => {
+          const days = this.props.screenProps.currentLang.labels.days;
+          let last_n_days = [];
+          const date = new Date();
+          for(let i = 0; i < n; i++){
+            last_n_days[i] = days[date.getDay()];
+            date.setDate(date.getDate()-1);
           }
-          firestore().collection("users").doc(user.uid).get().then(doc => {
-            if (!doc.exists) {
-              ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
-              return;
-            }
-            const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
-            const activity = data ? data.map(({ kjoules }) => kjoules) : [];
-            if (activity[activity.length - 1] > 2000) {
-              const total = activity[activity.length - 1];
-              function pushToArray(arr, obj) {
-                const index = arr.findIndex((e) => e.value === obj.value);
-                if (index === -1) {
-                    arr.push(obj);
-                } else {
-                    arr[index] = obj;
-                }
-              }
-              let medals = this.state.medals;
-              pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
-              this.setState({ medals });
-            }
-            this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
-          });
+          last_n_days.reverse();
+          return last_n_days;
         }
+        firestore().collection("users").doc(user.uid).get().then(doc => {
+          if (!doc.exists) {
+            ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
+            return;
+          }
+          const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
+          const getAge = dateString => {
+            var today = new Date();
+            var birthDate = new Date(dateString);
+            var age = today.getFullYear() - birthDate.getFullYear();
+            var m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+          }
+          const age = getAge(born);
+          let v;
+          if (gender === "male") {
+            if (unit === "metric") v = 66.5 + (13.75 * weight) + (5.003 * height) - (6.775 * age);
+            else v = 65 + (6.2 * weight) + (12.7 * height) - (6.8 * age);
+          }else {
+            if (unit === "metric") v = 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
+            else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
+          }
+          const activity = data ? data.map(({ kcal }) => kcal) : [];
+          if (activity[activity.length - 1] > 2000) {
+            const total = activity[activity.length - 1];
+            function pushToArray(arr, obj) {
+              const index = arr.findIndex((e) => e.value === obj.value);
+              if (index === -1) {
+                  arr.push(obj);
+              } else {
+                  arr[index] = obj;
+              }
+            }
+            let medals = this.state.medals;
+            pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
+            this.setState({ medals });
+          }
+          this.setState({ bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+        });
       } else {
         ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
       }
@@ -106,7 +110,26 @@ export default class ProfileScreen extends Component {
           return;
         }
         const { name, email, profileImage, gender, born, weight, height, unit, data } = doc.data();
-        const activity = data ? data.map(({ kjoules }) => kjoules) : [];
+        const getAge = dateString => {
+          var today = new Date();
+          var birthDate = new Date(dateString);
+          var age = today.getFullYear() - birthDate.getFullYear();
+          var m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+          }
+          return age;
+        }
+        const age = getAge(born);
+        let v;
+        if (gender === "male") {
+          if (unit === "metric") v = 66.5 + (13.75 * weight) + (5.003 * height) - (6.775 * age);
+          else v = 65 + (6.2 * weight) + (12.7 * height) - (6.8 * age);
+        }else {
+          if (unit === "metric") v = 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
+          else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
+        }
+        const activity = data ? data.map(({ kcal }) => kcal) : [];
         if (activity[activity.length - 1] > 2000) {
           const total = activity[activity.length - 1];
           function pushToArray(arr, obj) {
@@ -121,7 +144,7 @@ export default class ProfileScreen extends Component {
           pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
           this.setState({ medals });
         }
-        this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+        this.setState({ bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
         setTimeout(() => this.setState({ iconClicked: false }), 600);
       });
     });
@@ -168,7 +191,7 @@ export default class ProfileScreen extends Component {
                     <Text style={{ color: colors.light, fontSize: 28, textAlign: "center", marginBottom: -12, marginTop: -10 }}>{this.props.screenProps.currentLang.labels.activityPerDay}</Text>
                     <ProgressBar
                       color={colors.red}
-                      progress={this.state.userData.data[this.state.userData.data.length - 1].kjoules / 10000}
+                      progress={this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr}
                       style={{ width: screenWidth/1.5, marginBottom: -15 }}
                     />
                     {this.state.userData.gender && (

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Dimensions, View, StyleSheet, ScrollView, PermissionsAndroid, Text, ToastAndroid, ActivityIndicator, Keyboard } from "react-native";
+import { Dimensions, View, StyleSheet, ScrollView, PermissionsAndroid, Text, ToastAndroid, ActivityIndicator, Keyboard, AppState } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { Button } from "react-native-elements";
 import * as colors from "../../media/colors";
@@ -7,6 +7,7 @@ import Geolocation from "react-native-geolocation-service";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import BackgroundGeolocation from "@mauron85/react-native-background-geolocation";
+import AsyncStorage from '@react-native-community/async-storage';
 
 const screenWidth = Math.round(Dimensions.get("window").width);
 const screenHeight = Math.round(Dimensions.get("window").height);
@@ -118,11 +119,25 @@ export default class RunningScreen extends Component {
     { enableHighAccuracy: true, interval: 1000, fastestInterval: 1000, distanceFilter: 30 });
   }
 
+  _handleAppStateChange = async nextAppState => {
+    if (this.state.isRunning)
+      if (nextAppState === "background") {
+        AsyncStorage.setItem("sportsmart-runningBackgroundLastDate", new Date().getTime().toString());
+      } else {
+        const ms = await AsyncStorage.getItem("sportsmart-runningBackgroundLastDate");
+        if (ms) {
+          const difference = new Date() - new Date(JSON.parse(ms));
+          this.setState({ duration: this.state.duration + (difference / 1000) - 2 });
+        }
+      }
+  }
+
   componentDidMount() {
+    AppState.addEventListener("change", this._handleAppStateChange);
     Keyboard.dismiss();
     this._mounted = true;
     this.unsubscribe = auth().onAuthStateChanged(async user => {
-      if (user && user.providerData[0].providerId === "password") {
+      if (user) {
         let doc = await firestore().collection("users").doc(user.uid).get();
         if (doc.exists) this.setState({ userData: doc.data() });
       }
@@ -213,23 +228,23 @@ export default class RunningScreen extends Component {
 
   getCalories = () => {
     if (Math.round(this.state.position.distance * 100) / 100 > 0) {
-      const getMets = () => {
+      let getMets = () => {
+        let getMet = n => {
+          let num = 1.9;
+          for (let i = 0; i <= n; i++) {
+            if (i % 4 === 0 && i !== 0) {
+              num += 0.4;
+            } else {
+              num += 0.5;
+            }
+          }
+          return num;
+        }
         const totalTime = this.state.duration / 3600;  // hours
         const totalDistance = this.state.position.distance;  // km
-        const speed = Math.round((totalDistance/totalTime)*2)/2;
-        let metValues = [2.4, 2.9, 3.4, 3.9, 4.3, 4.8, 5.3, 5.8, 6.2, 6.7, 7.2, 7.7, 8.1, 8.6, 9.1, 9.6, 10.0, 10.5, 11.0, 11.5, 11.9, 12.3, 12.8, 13.3, 13.7, 14.2, 14.7, 15.2, 15.6, 16.1, 16.6, 17.1, 17.5, 18.0, 18.5, 19.0, 19.4, 19.9, 20.4, 20.9, 21.3, 21.8, 22.3, 22.8, 23.2, 23.7];
-        let finalMetValue;
-        if (speed < 5) {
-          finalMetValue = metValues[0];
-        } else {
-          let index = (speed - 5) / 0.5 + 1;
-          if (index >= metValues.length) {
-            finalMetValue = metValues[metValues.length-1];
-          } else {
-            finalMetValue = metValues[index];
-          }
-        }
-        return finalMetValue;
+        const speed = Math.round((totalDistance/totalTime)*2)/2; // km/h
+        let index = (speed - 5) / 0.5 + 1;
+        return getMet(index);
       }
       const getAge = dateString => {
         var today = new Date();
@@ -252,14 +267,14 @@ export default class RunningScreen extends Component {
         else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
       }
       const mets = getMets();
-      let x = Math.round(((v / 24) * (this.state.duration / 3600) + mets * (this.state.duration / 3600)) * 2) / 2; // kcal, rounded
+      let x = Math.round((v * (mets/24) * (this.state.duration / 3600)) * 2) / 2; // kcal, rounded
       this.setState({ kcal: x, kjoules: Math.round((x * 4.184) * 2) / 2, prevKj: this.state.kjoules, prevkcal: this.state.kcal }, async () => {
         const doc = await firestore().collection("users").doc(this.state.userData.uid).get();
         const mData = doc.data().data || [];  // modified data - array of objects that's about to change
-        function dateDiffInDays(a, b) {
+        function dateDiffInHours(a, b) {
           const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
           const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-          return Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
+          return Math.floor((utc2 - utc1) / (1000 * 60 * 60));
         }
         // store only last 5 days worth of info about activity, and also update last day with activity info
         if (mData.length === 0) { // if there is no data for the user
@@ -271,7 +286,7 @@ export default class RunningScreen extends Component {
             date: new Date().toString()
           };
           mData.push(newObj);
-        } else if (dateDiffInDays(new Date(mData[mData.length - 1].date), new Date()) > 1) { // if 1 day has passed since previous update object
+        } else if (dateDiffInHours(new Date(mData[mData.length - 1].date), new Date()) >= 24) { // if 1 day has passed since previous update object
           let newObj = {
             kjoules: this.state.kjoules,
             kcal: this.state.kcal,
@@ -303,6 +318,7 @@ export default class RunningScreen extends Component {
     Geolocation.clearWatch(this.watchID);
     BackgroundGeolocation.removeAllListeners();
     BackgroundGeolocation.stop();
+    AppState.removeEventListener("change", this._handleAppStateChange);
   }
 
   render() {

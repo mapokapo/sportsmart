@@ -7,6 +7,7 @@ import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
 import ImagePicker from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as colors from "../../media/colors";
 
 const options = {
   title: "Select Image",
@@ -101,7 +102,7 @@ export default class RegisterScreen extends Component {
   }
 
   nameCheck = (text) => {
-    return /^[a-zA-Z ]+$/g.test(text);
+    return /^[\-/A-Za-z\u00C0-\u017F ]+$/g.test(text);
   }
 
   passCheck = (text) => {
@@ -426,8 +427,9 @@ export default class RegisterScreen extends Component {
           />)}
             <View style={{ display: "flex", flexDirection: "row" }}>
               {!this.state.higherInputFocused && this.props.screenProps.currentLang.name === "english" && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 5, marginLeft: 15, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
-                <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>Unit</Text>
+                <Text style={{ color: colors.dark, position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>Unit</Text>
                 <Picker
+                  style={{ color: colors.dark }}
                   mode="dropdown"
                   selectedValue={this.state.unit}
                   onValueChange={(itemValue) => {
@@ -438,15 +440,17 @@ export default class RegisterScreen extends Component {
                 </Picker>
               </View>)}
               {!this.state.higherInputFocused && (<View style={{ flex: 1, borderRadius: 5, borderColor: colors.dark, borderWidth: 1, marginRight: 15, marginLeft: this.props.screenProps.currentLang.name !== "english" ? 15 : 5, marginVertical: this.state.keyboardOpened ? 5 : 10, paddingVertical: 5 }}>
-                <Text style={{ position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>{this.props.screenProps.currentLang.labels.genderText}</Text>
+                <Text style={{ color: colors.dark, position: "absolute", top: -11, left: 10, backgroundColor: colors.light, paddingVertical: 1, paddingHorizontal: 5 }}>{this.props.screenProps.currentLang.labels.genderText}</Text>
                 <Picker
                   mode="dropdown"
+                  style={{ color: colors.dark }}
+                  itemStyle={{ color: colors.dark, backgroundColor: colors.light }}
                   selectedValue={this.state.gender}
                   onValueChange={(itemValue) => {
                     this.setState({ gender: itemValue });
                   }}>
-                  <Picker.Item label={this.props.screenProps.currentLang.labels.male} value="male" />
-                  <Picker.Item label={this.props.screenProps.currentLang.labels.female} value="female" />
+                    <Picker.Item label={this.props.screenProps.currentLang.labels.male} value="male" />
+                    <Picker.Item label={this.props.screenProps.currentLang.labels.female} value="female" />
                 </Picker>
               </View>)}
             </View>
@@ -530,8 +534,6 @@ export default class RegisterScreen extends Component {
     )
   }
 }
-
-import * as colors from "../../media/colors";
 
 const styles = StyleSheet.create({
   mainWrapper: {

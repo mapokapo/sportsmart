@@ -38,7 +38,26 @@ export default class TogetherProfile extends Component {
       }
       const { name, email, profileImage, gender, born, weight, height, unit } = this.props.navigation.getParam("userItem").item;
       const { data } = doc.data();
-      const activity = data ? data.map(({ kjoules }) => kjoules) : [];
+      const getAge = dateString => {
+        var today = new Date();
+        var birthDate = new Date(dateString);
+        var age = today.getFullYear() - birthDate.getFullYear();
+        var m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+      }
+      const age = getAge(born);
+      let v;
+      if (gender === "male") {
+        if (unit === "metric") v = 66.5 + (13.75 * weight) + (5.003 * height) - (6.775 * age);
+        else v = 65 + (6.2 * weight) + (12.7 * height) - (6.8 * age);
+      }else {
+        if (unit === "metric") v = 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
+        else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
+      }
+      const activity = data ? data.map(({ kcal }) => kcal) : [];
       if (activity[activity.length - 1] > 2000) {
         const total = activity[activity.length - 1];
         function pushToArray(arr, obj) {
@@ -53,7 +72,7 @@ export default class TogetherProfile extends Component {
         pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
         this.setState({ medals });
       }
-      this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+      this.setState({ bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
     });
   }
 
@@ -81,7 +100,26 @@ export default class TogetherProfile extends Component {
         }
         const { name, email, profileImage, gender, born, weight, height, unit } = this.props.navigation.getParam("userItem").item;
         const { data } = doc.data();
-        const activity = data ? data.map(({ kjoules }) => kjoules) : [];
+        const getAge = dateString => {
+          var today = new Date();
+          var birthDate = new Date(dateString);
+          var age = today.getFullYear() - birthDate.getFullYear();
+          var m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+          }
+          return age;
+        }
+        const age = getAge(born);
+        let v;
+        if (gender === "male") {
+          if (unit === "metric") v = 66.5 + (13.75 * weight) + (5.003 * height) - (6.775 * age);
+          else v = 65 + (6.2 * weight) + (12.7 * height) - (6.8 * age);
+        }else {
+          if (unit === "metric") v = 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
+          else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
+        }
+        const activity = data ? data.map(({ kcal }) => kcal) : [];
         if (activity[activity.length - 1] > 2000) {
           const total = activity[activity.length - 1];
           function pushToArray(arr, obj) {
@@ -96,7 +134,7 @@ export default class TogetherProfile extends Component {
           pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
           this.setState({ medals });
         }
-        this.setState({ userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+        this.setState({ bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
         setTimeout(() => this.setState({ iconClicked: false }), 600);
       });
     });
@@ -143,7 +181,7 @@ export default class TogetherProfile extends Component {
                     <Text style={{ color: colors.light, fontSize: 28, textAlign: "center", marginBottom: -12, marginTop: -10 }}>{this.props.screenProps.currentLang.labels.activityPerDay}</Text>
                     <ProgressBar
                       color={colors.red}
-                      progress={this.state.userData.data[this.state.userData.data.length - 1].kjoules / 10000}
+                      progress={this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr}
                       style={{ width: screenWidth/1.5, marginBottom: -15 }}
                     />
                     {this.state.userData.gender && (

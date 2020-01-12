@@ -368,7 +368,7 @@ class NotifiersScreen extends Component {
         <FAB
           style={{ backgroundColor: colors.red, color: colors.dark, position: "absolute", right: 30, bottom: 30 }}
           icon="add"
-          onPress={() => {this.setState({ editVisible: true, timeText: new Date(null), descText: "", activeBool: false, editing: -1, itemID: (Math.floor(Math.random() * 100)).toString() }); PushNotification.requestPermissions([ "alert", "badge", "sound" ])}}
+          onPress={() => {this.setState({ editVisible: true, timeText: new Date(null), descText: "", activeBool: true, editing: -1, itemID: (Math.floor(Math.random() * 100)).toString() }); PushNotification.requestPermissions([ "alert", "badge", "sound" ])}}
         />
       </>
     )
