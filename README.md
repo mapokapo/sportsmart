@@ -13,16 +13,14 @@ This app tracks your step count, walking distance, calories/fat burned, weight l
 
 # TODO:
 - [x] Track user distance, step count, weight lost, etc. using distance traveled with Google Maps
-- [ ] Implement Notifier and Profile screens
-- [ ] Add additional features in side-drawer for easy access
-- [ ] Implement settings screen (dark mode, language, notification, etc.)
-- [ ] Implement user search and display
-- [ ] (?) Use graphs to display user stats
-- [ ] Add Firebase listeners to specific distance milestones and reward users with medals
-- [ ] Add automatic weekly/monthly tournaments in walking
+- [x] Implement Notifier and Profile screens
+- [x] Add additional features in side-drawer for easy access
+- [x] Implement settings screen (language, notification, etc.)
+- [x] Implement user search and display
+- [x] (?) Use graphs to display user stats
+- [x] Add Firebase listeners to specific distance milestones and reward users with medals
 - [x] Implement notifier with notifications (like alarm app)
-- [ ] Polish app (broad) - performance, size, internet usage
-- [ ] (?) Implement admin/user management system (not likely since the app is mostly fixated on individual users improving themselves, and is not a social media app)
+- [x] Polish app (broad) - performance, size, internet usage
 
 # Screenshots from app:
 <img alt="Running Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/running.png?raw=true" width="270" height="480" /> <img alt="Notifiers Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/notifiers.png?raw=true" width="270" height="480" /> <img alt="Drawer Navigator" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/drawer.png?raw=true" width="270" height="480" /> <img alt="Login Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/login.png?raw=true" width="270" height="480" /> <img alt="Register Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/register.png?raw=true" width="270" height="480" /> <img alt="Reset Password Screen" src="https://github.com/mapokapo/sportsmart-app/blob/master/src/media/screenshots/resetpass.png?raw=true" width="270" height="480" />
