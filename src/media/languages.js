@@ -49,6 +49,7 @@ const languages = [
       statistics: "Statistics",
       settings: "Settings",
       support: "Support",
+      instructions: "Instructions",
       running: "Running",
       notifiers: "Notifications",
       profile: "Profile",
@@ -102,7 +103,16 @@ const languages = [
       title: "Title",
       supportSubmit: "Thank you for submitting a report!",
       supportSubmitTimeout: "You must wait 30 seconds between report submissions",
-      additionalInfoText: "We require additional info from you in order to provide you with statistics info."
+      additionalInfoText: "We require additional info from you in order to provide you with statistics info.",
+      alarmStart: "Alarm has expired. Start running!",
+      howToStart: "How To Start",
+      howToStartText1: "Go to the ",
+      howToStartText2: " Running screen and press the START button to start your activity.",
+      findStatisticsText: "You can find info about your activity on the Profile screen, or on the Statistics screen on the side drawer.",
+      findStatisticsText2: "You can search other Users and view their statistics and other info, on the side drawer as well.",
+      medals: "Medals",
+      medalsUseText: "You can get various medals as a reward for your activity, and they are: ",
+      medalsTexts: ["Surpassing your Daily Activity bar", "Being active for more than an hour", "Travelling for more than 10 kilometers/6.2 miles"]
     }
   },
   {
@@ -155,6 +165,7 @@ const languages = [
       statistics: "Statistike",
       settings: "Postavke",
       support: "Podrška",
+      instructions: "Upute Korištenja",
       running: "Trening",
       notifiers: "Planirani Treninzi",
       profile: "Profil",
@@ -206,7 +217,16 @@ const languages = [
       title: "Naslov",
       supportSubmit: "Hvala vam na podršci!",
       supportSubmitTimeout: "Morate pričekati 30 sekundi između slanja prijava",
-      additionalInfoText: "Mi zahtijevamo dodatne informacije od vas kako biste dobili uvid u statistike i aktivnost."
+      additionalInfoText: "Mi zahtijevamo dodatne informacije od vas kako biste dobili uvid u statistike i aktivnost.",
+      alarmStart: "Alarm je završio. Počni se kretati!",
+      howToStart: "Kako početi",
+      howToStartText1: "Idite na ",
+      howToStartText2: " Trening i pritisnite gumb START da biste počeli trening.",
+      findStatisticsText: "Možete naći informacije o svojoj aktivnosti na svom Profilu ili na Statistikama sa menija sa strane.",
+      findStatisticsText2: "Također možete vidjeti statistike i ostale informacije o drugim Korisnicima sa menija sa strane.",
+      medals: "Medalje",
+      medalsUseText: "Možete dobiti razne medalje za svoju aktivnost, a to su: ",
+      medalsTexts: ["Premašivanje svog cilja Dnevne Aktivnosti", "Aktivnost duža od jednog sata", "Premašivanje više od 10 kilometara"]
     }
   }
 ];

@@ -508,6 +508,7 @@ export default class RegisterScreen extends Component {
             </View>
             <Button onPress={() => this.setState({ datePickerOpen: true })} raised titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: 0, marginBottom: 0, backgroundColor: colors.light, flex: 1 }} containerStyle={{ display: "flex", flex: 10, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginLeft: 5, marginRight: 15, marginVertical: 5 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString(this.state.unit === "metric" ? "en-GB" : "en-US") : this.props.screenProps.currentLang.labels.born} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />
             {this.state.datePickerOpen && (<DateTimePicker
+              style={{ color: colors.light }}
               value={this.state.bornText}
               mode="date"
               is24Hour={true}
@@ -519,7 +520,7 @@ export default class RegisterScreen extends Component {
         </View>
         {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
         <View style={{ flex: 2, marginHorizontal: 15, display: "flex"}}>
-          <Button
+          {this.state.currentError === null && (<Button
             containerStyle={{ top: this.state.higherInputFocused ? -30 : 0 }}
             titleStyle={{ color: colors.light }}
             buttonStyle={{ backgroundColor: colors.red }}
@@ -528,7 +529,7 @@ export default class RegisterScreen extends Component {
             raised
             loading={this.state.loading}
             onPress={this.handleRegister}
-          />
+          />)}
         </View>
       </View>
     )

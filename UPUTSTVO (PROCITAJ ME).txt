@@ -1,0 +1,12 @@
+Ovaj projekt je rađen u React Native-u, pa su koraci generiranja aplikacije i pregledavanja koda drugačiji nego kod standarding Android Studio projekata.
+
+Napomena: za buildanje apk fajla potrebno je imati Node.js (Ovdje je korištena verzija 12.12.0) instaliran i dodan u Environment Variables u PC-u, te imati react-native-cli instaliran putem komande (nakon instaliranje Node.js-a): npm i react-native-cli -g
+Takođe je potreban Java Development Kit za pokretanje Android stavki
+
+Sav kod za aplikaciju se nalazi u sportsmart/src/ folderu, kao i svi mediji (lokalizacijski fajlovi, slike, videa, itd.)
+
+Upute za generiranja aplikacije na mobilnom uređaju:
+1. Nakon ekstraktanja zip foldera, uđite u terminal/command prompt i uđite u folder sportsmart (glavni folder)
+2. Spojite mobitel ili upalite Android Emulator
+3. Sljedeća komanda: npm i; react-native link; cd android; .\gradlew clean; cd..; react-native run-android (ili react-native run-android --variant-release za finalnu verziju)
+3.1. Apk se takođe može generirati putem običnog Android Studio načina: cd android; .\gradlew assembleRelease;

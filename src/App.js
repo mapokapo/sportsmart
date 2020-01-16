@@ -26,6 +26,7 @@ import TogetherProfile from "./screens/DrawerItems/TogetherProfile";
 import StatisticsScreen from "./screens/DrawerItems/StatisticsScreen";
 import SettingsScreen from "./screens/DrawerItems/SettingsScreen";
 import SupportScreen from "./screens/DrawerItems/SupportScreen";
+import IntructionsScreen from "./screens/DrawerItems/IntructionsScreen";
 
 /* SWITCH 2 */
 import LoadingScreen from "./screens/Auth/LoadingScreen";
@@ -102,7 +103,8 @@ const DrawerNavigator = createDrawerNavigator({
   }),
   Statistics: StatisticsScreen,
   Settings: SettingsScreen,
-  Support: SupportScreen
+  Support: SupportScreen,
+  Instructions: IntructionsScreen
 }, {
   contentComponent: DrawerComponent
   ,

@@ -12,17 +12,6 @@ const screenWidth = Dimensions.get("window").width;
 export default class StatisticsScreen extends Component {
   constructor(props) {
     super(props);
-    let getLastDays = n => {
-      const days = this.props.screenProps.currentLang.labels.days;
-      let last_n_days = [];
-      const date = new Date();
-      for(let i = 0; i < n; i++){
-        last_n_days[i] = days[date.getDay()];
-        date.setDate(date.getDate()-1);
-      }
-      last_n_days.reverse();
-      return last_n_days;
-    }
     this.state = {
       loading: false,
       loaded: false,
@@ -32,10 +21,10 @@ export default class StatisticsScreen extends Component {
           suffix: "kJ",
           main: true,
           data: {
-            labels: getLastDays(5),
+            labels: [],
             datasets: [
               {
-                data: [ 1, 2, 3, 4, 5 ]
+                data: []
               }
             ]
           }
@@ -44,10 +33,10 @@ export default class StatisticsScreen extends Component {
           title: props.screenProps.currentLang.labels.calories,
           suffix: "kCal",
           data: {
-            labels: getLastDays(5),
+            labels: [],
             datasets: [
               {
-                data: [ 1, 2, 3, 4, 5 ]
+                data: []
               }
             ]
           }
@@ -56,10 +45,10 @@ export default class StatisticsScreen extends Component {
           title: props.screenProps.currentLang.labels.distance,
           suffix: "km",
           data: {
-            labels: getLastDays(5),
+            labels: [],
             datasets: [
               {
-                data: [ 1, 2, 3, 4, 5 ]
+                data: []
               }
             ]
           }
@@ -68,10 +57,10 @@ export default class StatisticsScreen extends Component {
           title: props.screenProps.currentLang.labels.duration,
           suffix: "s",
           data: {
-            labels: getLastDays(5),
+            labels: [],
             datasets: [
               {
-                data: [ 1, 2, 3, 4, 5 ]
+                data: []
               }
             ]
           }
@@ -80,10 +69,10 @@ export default class StatisticsScreen extends Component {
           title: props.screenProps.currentLang.labels.speed,
           suffix: "m/s",
           data: {
-            labels: getLastDays(5),
+            labels: [],
             datasets: [
               {
-                data: [ 1, 2, 3, 4, 5 ]
+                data: []
               }
             ]
           }
@@ -107,37 +96,35 @@ export default class StatisticsScreen extends Component {
               return;
             }
             if (!doc.data().data) {
-              ToastAndroid.show(this.props.screenProps.currentLang.labels.noData1 + this.props.screenProps.currentLang.labels.noData2, ToastAndroid.LONG);
               this.setState({ loading: false, loaded: false });
               return;
             }
             const data = doc.data().data;
             const unit = doc.data().unit;
             let items = this.state.items;
-            let getLastDays = n => {
-              const days = this.props.screenProps.currentLang.labels.days;
-              let last_n_days = [];
-              const date = new Date();
-              for(let i = 0; i < n; i++){
-                last_n_days[i] = days[date.getDay()];
-                date.setDate(date.getDate()-1);
-              }
-              last_n_days.reverse();
-              return last_n_days;
-            }
             // Activity, Calories, Distance, Duration, Speed
             items[0].data.datasets[0].data = data.map(({ kjoules }) => kjoules);
-            items[0].data.labels = getLastDays(items[0].data.datasets[0].data.length);
+            items[0].data.labels = data.map(obj => {
+              return this.props.screenProps.currentLang.labels.days[new Date(obj.date).getDay()];
+            });
             items[1].data.datasets[0].data = data.map(({ kcal }) => unit === "metric" ? kcal : kcal/1000);
-            items[1].data.labels = getLastDays(items[1].data.datasets[0].data.length);
+            items[1].data.labels = data.map(obj => {
+              return this.props.screenProps.currentLang.labels.days[new Date(obj.date).getDay()];
+            });
             items[1].suffix = unit === "metric" ? "kCal" : "Cal";
             items[2].data.datasets[0].data = data.map(({ distance }) => unit === "metric" ? distance : (Math.round( (distance * 0.62137119) * 100 + Number.EPSILON) / 100));
-            items[2].data.labels = getLastDays(items[2].data.datasets[0].data.length);
+            items[2].data.labels = data.map(obj => {
+              return this.props.screenProps.currentLang.labels.days[new Date(obj.date).getDay()];
+            });
             items[2].suffix = unit === "metric" ? "km" : "mi";
             items[3].data.datasets[0].data = data.map(({ duration }) => duration);
-            items[3].data.labels = getLastDays(items[3].data.datasets[0].data.length);
+            items[3].data.labels = data.map(obj => {
+              return this.props.screenProps.currentLang.labels.days[new Date(obj.date).getDay()];
+            });
             items[4].data.datasets[0].data = data.map(({ distance, duration }) => Math.round( (((distance * 1000)/duration) * (unit === "metric" ? 1 : 3.28084)) * 100 + Number.EPSILON) / 100);
-            items[4].data.labels = getLastDays(items[4].data.datasets[0].data.length);
+            items[4].data.labels = data.map(obj => {
+              return this.props.screenProps.currentLang.labels.days[new Date(obj.date).getDay()];
+            });
             items[4].suffix = unit === "metric" ? "m/s" : "ft/s";
             this.setState({ loading: false, loaded: true });
           });
@@ -166,7 +153,7 @@ export default class StatisticsScreen extends Component {
         getDotProps={(data, index) => {
           return {
             r: 5,
-            fill: index === data.length - 1 ? "rgba(243, 54, 54, 1)" : "rgba(216, 232, 240, 0.85)"
+            fill: index === 4 ? "rgba(243, 54, 54, 1)" : "rgba(216, 232, 240, 0.85)"
           };
         }}
         chartConfig={{

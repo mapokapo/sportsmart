@@ -146,14 +146,14 @@ class NotifiersScreen extends Component {
                 userInfo: {
                   id: this.state.itemID
                 },
-                bigText: "Alarm has expired. Start running!",
+                bigText: this.props.screenProps.currentLang.labels.alarmStart,
                 vibrate: true,
                 vibration: 300,
                 ongoing: false,
                 title: "Sportsmart Alarm",
                 message: "Sportsmart",
                 playSound: true,
-                soundName: require("../../media/sportsmart_notification.mp3"),
+                soundName: "sportsmart_notification.mp3",
                 date: new Date(Date.now() + seconds * 1000)
               });
               String.prototype.format = function() {
@@ -183,14 +183,14 @@ class NotifiersScreen extends Component {
           userInfo: {
             id: this.state.itemID
           },
-          bigText: "Alarm has expired. Start running!",
+          bigText: this.props.screenProps.currentLang.labels.alarmStart,
           vibrate: true,
           vibration: 300,
           ongoing: false,
           title: "Sportsmart Alarm",
           message: "Sportsmart",
           playSound: true,
-          soundName: require("../../media/sportsmart_notification.mp3"),
+          soundName: "sportsmart_notification.mp3",
           date: new Date(Date.now() + seconds * 1000)
         });
         String.prototype.format = function() {
@@ -250,6 +250,7 @@ class NotifiersScreen extends Component {
             />
             <Button onPress={() => this.setState({ datePickerVisible: true })} raised titleStyle={{ color: colors.dark, fontWeight: "bold", flex: 1, backgroundColor: colors.light, fontSize: 20 }} buttonStyle={{ backgroundColor: colors.light }} containerStyle={{ borderRadius: 5, borderColor: this.state.timeError ? colors.red : "#000", borderWidth: 1, marginTop: 30 }} title={this.timeCheck(this.state.timeText) ? (this.state.timeText.getHours() < 10 ? "0" + this.state.timeText.getHours() : this.state.timeText.getHours()) + ":" + (this.state.timeText.getMinutes() < 10 ? "0" + this.state.timeText.getMinutes() : this.state.timeText.getMinutes()) : this.props.screenProps.currentLang.labels.time} iconRight icon={{type: "material-community", name: "clock", size: 24, color: colors.dark}} />
             {this.state.datePickerVisible && (<DateTimePicker
+              style={{ color: colors.light }}
               value={this.state.timeText}
               mode="time"
               is24Hour={true}
@@ -320,7 +321,7 @@ class NotifiersScreen extends Component {
                     if (value) {
                       let seconds = this.getTimeToAlarm(item);
                       PushNotification.localNotificationSchedule({
-                        bigText: "Alarm has expired. Start running!",
+                        bigText: this.props.screenProps.currentLang.labels.alarmStart,
                         number: 0,
                         userInfo: {
                           id: this.state.itemID
@@ -331,7 +332,7 @@ class NotifiersScreen extends Component {
                         title: "Sportsmart Alarm",
                         message: "Sportsmart",
                         playSound: true,
-                        soundName: require("../../media/sportsmart_notification.mp3"),
+                        soundName: "sportsmart_notification.mp3",
                         date: new Date(Date.now() + seconds * 1000)
                       });
                       String.prototype.format = function() {

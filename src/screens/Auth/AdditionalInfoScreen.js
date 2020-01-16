@@ -263,6 +263,7 @@ export default class AdditionalInfoScreen extends Component {
           </View>
         </View>
         {this.state.datePickerOpen && (<DateTimePicker
+          style={{ color: colors.light }}
           value={this.state.bornText}
           mode="date"
           is24Hour={true}

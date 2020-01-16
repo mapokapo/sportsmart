@@ -16,22 +16,12 @@ export default class TogetherProfile extends Component {
       iconClicked: false,
       data: undefined,
       medals: [],
-      progress: 0
+      progress: 0,
+      userActivity: 0
     };
   }
 
   componentDidMount = () => {
-    let getLastDays = n => {
-      const days = this.props.screenProps.currentLang.labels.days;
-      let last_n_days = [];
-      const date = new Date();
-      for(let i = 0; i < n; i++){
-        last_n_days[i] = days[date.getDay()];
-        date.setDate(date.getDate()-1);
-      }
-      last_n_days.reverse();
-      return last_n_days;
-    }
     firestore().collection("users").doc(this.props.navigation.getParam("userItem").item.uid).get().then(doc => {
       if (!doc.exists) {
         ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
@@ -58,6 +48,9 @@ export default class TogetherProfile extends Component {
         if (unit === "metric") v = 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
         else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
       }
+      function dateDiffInHours(a, b) {
+        return Math.abs(b - a) / 36e5;
+      }
       const activity = data ? data.map(({ kcal }) => kcal) : [];
       const activity2 = data ? data.map(({ duration }) => duration) : [];
       const activity3 = data ? data.map(({ distance }) => distance) : [];
@@ -82,18 +75,13 @@ export default class TogetherProfile extends Component {
         const total = activity3[activity3.length - 1];
         pushToArray(medals, { icon: require("../../media/distance_medal.png"), value: total });
       }
-      this.setState({ medals, bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(data.length), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined }, () => {
+      this.setState({ medals: data && dateDiffInHours(new Date(data[data.length - 1].date), new Date()) < 24 ? medals : [], bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: data.map(obj => {
+        return this.props.screenProps.currentLang.labels.days[new Date(obj.date).getDay()];
+      }), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined }, () => {
         if (this.state.userData.data) {
-          function dateDiffInHours(a, b) {
-            const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-            const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-            return Math.floor((utc2 - utc1) / (1000 * 60 * 60));
-          }
           const currentDate = new Date();
           const activityDate = new Date(this.state.userData.data[this.state.userData.data.length - 1].date);
-          if (dateDiffInHours(activityDate, currentDate) < 24) {
-            this.setState({ progress: this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr });
-          }
+          this.setState({ userActivity: dateDiffInHours(activityDate, currentDate) < 24 ? this.state.userData.data[this.state.userData.data.length - 1].kcal : 0, progress: dateDiffInHours(activityDate, currentDate) < 24 ? this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr : 0 });
         }
       });
     });
@@ -105,17 +93,6 @@ export default class TogetherProfile extends Component {
 
   refreshData = () => {
     this.setState({ data: null, iconClicked: true }, () => {
-      let getLastDays = n => {
-        const days = this.props.screenProps.currentLang.labels.days;
-        let last_n_days = [];
-        const date = new Date();
-        for(let i = 0; i < n; i++){
-          last_n_days[i] = days[date.getDay()];
-          date.setDate(date.getDate()-1);
-        }
-        last_n_days.reverse();
-        return last_n_days;
-      }
       firestore().collection("users").doc(this.props.navigation.getParam("userItem").item.uid).get().then(doc => {
         if (!doc.exists) {
           ToastAndroid.show(this.props.screenProps.currentLang.errors.error + ": " + this.props.screenProps.currentLang.errors.userNotFound, ToastAndroid.SHORT);
@@ -142,6 +119,9 @@ export default class TogetherProfile extends Component {
           if (unit === "metric") v = 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
           else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
         }
+        function dateDiffInHours(a, b) {
+          return Math.abs(b - a) / 36e5;
+        }
         const activity = data ? data.map(({ kcal }) => kcal) : [];
         const activity2 = data ? data.map(({ duration }) => duration) : [];
         const activity3 = data ? data.map(({ distance }) => distance) : [];
@@ -166,18 +146,13 @@ export default class TogetherProfile extends Component {
           const total = activity3[activity3.length - 1];
           pushToArray(medals, { icon: require("../../media/distance_medal.png"), value: total });
         }
-        this.setState({ medals, bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(data.length), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined }, () => {
+        this.setState({ medals: data && dateDiffInHours(new Date(data[data.length - 1].date), new Date()) < 24 ? medals : [], bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: data.map(obj => {
+          return this.props.screenProps.currentLang.labels.days[new Date(obj.date).getDay()];
+        }), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined }, () => {
           if (this.state.userData.data) {
-            function dateDiffInHours(a, b) {
-              const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-              const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-              return Math.floor((utc2 - utc1) / (1000 * 60 * 60));
-            }
             const currentDate = new Date();
             const activityDate = new Date(this.state.userData.data[this.state.userData.data.length - 1].date);
-            if (dateDiffInHours(activityDate, currentDate) < 24) {
-              this.setState({ progress: this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr });
-            }
+            this.setState({ userActivity: dateDiffInHours(activityDate, currentDate) < 24 ? this.state.userData.data[this.state.userData.data.length - 1].kcal : 0, progress: dateDiffInHours(activityDate, currentDate) < 24 ? this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr : 0 });
           }
         });
         setTimeout(() => this.setState({ iconClicked: false }), 600);
@@ -230,7 +205,7 @@ export default class TogetherProfile extends Component {
                         progress={this.state.progress}
                         style={{ width: screenWidth/1.5, marginBottom: -15 }}
                       />
-                      <View style={{ flexDirection: "row" }}><Text style={{ color: this.state.progress >= 1 ? colors.light : (this.state.progress >= 0.5 && this.state.progress < 1 ? colors.blue : colors.red), fontSize: 16, textAlign: "center" }}>{Math.round(this.state.userData.data[this.state.userData.data.length - 1].kcal)}</Text><Text style={{ color: colors.light, fontSize: 16, textAlign: "center" }}> / {Math.round(this.state.bmr)}</Text></View>
+                      <View style={{ flexDirection: "row" }}><Text style={{ color: this.state.progress >= 1 ? colors.light : (this.state.progress >= 0.5 && this.state.progress < 1 ? colors.blue : colors.red), fontSize: 16, textAlign: "center" }}>{this.state.userActivity}</Text><Text style={{ color: colors.light, fontSize: 16, textAlign: "center" }}> / {Math.round(this.state.bmr)}</Text></View>
                     </>)}
                     {this.state.userData.gender && (
                       <Icon name="refresh" onPress={() => this.refreshData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />

@@ -14,7 +14,8 @@ export default class DrawerComponent extends Component {
         "Users",
         "Statistics",
         "Settings",
-        "Support"
+        "Support",
+        "Instructions"
       ],
       user: {
         name: "",

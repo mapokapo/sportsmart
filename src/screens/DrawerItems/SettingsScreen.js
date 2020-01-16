@@ -669,6 +669,7 @@ export default class SettingsScreen extends Component {
               </View>
               {this.props.screenProps.currentLang.name === "english" && (<Button onPress={() => this.setState({ datePickerOpen: true })} raised titleStyle={{ textAlign: "center", color: colors.dark, fontWeight: "bold", flexGrow: 1, backgroundColor: colors.light }} buttonStyle={{ marginTop: 0, marginBottom: 0, backgroundColor: colors.light, flexGrow: 1 }} containerStyle={{ display: "flex", flexGrow: 1, borderRadius: 5, borderColor: this.state.bornError ? colors.red : "#000", borderWidth: 1, marginVertical: 10 }} title={this.ageCheck(this.state.bornText) ? this.state.bornText.toLocaleDateString(this.state.unit === "metric" ? "en-GB" : "en-US") : this.props.screenProps.currentLang.labels.born} iconContainerStyle={{ marginRight: -3 }} iconRight icon={{type: "material-community", name: "calendar", size: 20, color: colors.dark}} />)}
               {this.state.datePickerOpen && (<DateTimePicker
+                style={{ color: colors.light }}
                 value={this.state.bornText}
                 mode="date"
                 is24Hour={true}

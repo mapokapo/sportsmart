@@ -272,9 +272,7 @@ export default class RunningScreen extends Component {
         const doc = await firestore().collection("users").doc(this.state.userData.uid).get();
         const mData = doc.data().data || [];  // modified data - array of objects that's about to change
         function dateDiffInHours(a, b) {
-          const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-          const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-          return Math.floor((utc2 - utc1) / (1000 * 60 * 60));
+          return Math.abs(b - a) / 36e5;
         }
         // store only last 5 days worth of info about activity, and also update last day with activity info
         if (mData.length === 0) { // if there is no data for the user
