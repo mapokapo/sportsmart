@@ -193,6 +193,7 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-video')
     implementation project(':react-native-push-notification')
     implementation project(':@react-native-community_google-signin')
     implementation project(':react-native-geolocation-service')

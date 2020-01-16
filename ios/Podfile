@@ -39,6 +39,8 @@ target 'sportsmart' do
 
   pod 'RNGoogleSignin', :path => '../node_modules/@react-native-community/google-signin'
 
+  pod 'react-native-video', :path => '../node_modules/react-native-video'
+
   target 'sportsmartTests' do
     inherit! :search_paths
     # Pods for testing

@@ -153,7 +153,7 @@ class NotifiersScreen extends Component {
                 title: "Sportsmart Alarm",
                 message: "Sportsmart",
                 playSound: true,
-                soundName: "sportsmart_notification.mp3",
+                soundName: require("../../media/sportsmart_notification.mp3"),
                 date: new Date(Date.now() + seconds * 1000)
               });
               String.prototype.format = function() {
@@ -190,7 +190,7 @@ class NotifiersScreen extends Component {
           title: "Sportsmart Alarm",
           message: "Sportsmart",
           playSound: true,
-          soundName: "sportsmart_notification.mp3",
+          soundName: require("../../media/sportsmart_notification.mp3"),
           date: new Date(Date.now() + seconds * 1000)
         });
         String.prototype.format = function() {
@@ -331,7 +331,7 @@ class NotifiersScreen extends Component {
                         title: "Sportsmart Alarm",
                         message: "Sportsmart",
                         playSound: true,
-                        soundName: "sportsmart_notification.mp3",
+                        soundName: require("../../media/sportsmart_notification.mp3"),
                         date: new Date(Date.now() + seconds * 1000)
                       });
                       String.prototype.format = function() {

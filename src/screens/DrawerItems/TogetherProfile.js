@@ -15,7 +15,8 @@ export default class TogetherProfile extends Component {
       userData: null,
       iconClicked: false,
       data: undefined,
-      medals: []
+      medals: [],
+      progress: 0
     };
   }
 
@@ -58,21 +59,43 @@ export default class TogetherProfile extends Component {
         else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
       }
       const activity = data ? data.map(({ kcal }) => kcal) : [];
-      if (activity[activity.length - 1] > 2000) {
+      const activity2 = data ? data.map(({ duration }) => duration) : [];
+      const activity3 = data ? data.map(({ distance }) => distance) : [];
+      let medals = this.state.medals;
+      function pushToArray(arr, obj) {
+        const index = arr.findIndex((e) => e.value === obj.value);
+        if (index === -1) {
+            arr.push(obj);
+        } else {
+            arr[index] = obj;
+        }
+      }
+      if (activity[activity.length - 1] > v) {
         const total = activity[activity.length - 1];
-        function pushToArray(arr, obj) {
-          const index = arr.findIndex((e) => e.value === obj.value);
-          if (index === -1) {
-              arr.push(obj);
-          } else {
-              arr[index] = obj;
+        pushToArray(medals, { icon: require("../../media/activity_medal.png"), value: total });
+      }
+      if (activity2[activity2.length - 1] > 3600) {
+        const total = activity2[activity2.length - 1];
+        pushToArray(medals, { icon: require("../../media/stamina_medal.png"), value: total });
+      }
+      if (activity3[activity3.length - 1] > 10) {
+        const total = activity3[activity3.length - 1];
+        pushToArray(medals, { icon: require("../../media/distance_medal.png"), value: total });
+      }
+      this.setState({ medals, bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(data.length), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined }, () => {
+        if (this.state.userData.data) {
+          function dateDiffInHours(a, b) {
+            const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+            const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+            return Math.floor((utc2 - utc1) / (1000 * 60 * 60));
+          }
+          const currentDate = new Date();
+          const activityDate = new Date(this.state.userData.data[this.state.userData.data.length - 1].date);
+          if (dateDiffInHours(activityDate, currentDate) < 24) {
+            this.setState({ progress: this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr });
           }
         }
-        let medals = this.state.medals;
-        pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
-        this.setState({ medals });
-      }
-      this.setState({ bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+      });
     });
   }
 
@@ -120,21 +143,43 @@ export default class TogetherProfile extends Component {
           else v = 655 + (4.3 * weight) + (4.7 * height) - (4.7 * age);
         }
         const activity = data ? data.map(({ kcal }) => kcal) : [];
-        if (activity[activity.length - 1] > 2000) {
+        const activity2 = data ? data.map(({ duration }) => duration) : [];
+        const activity3 = data ? data.map(({ distance }) => distance) : [];
+        let medals = this.state.medals;
+        function pushToArray(arr, obj) {
+          const index = arr.findIndex((e) => e.value === obj.value);
+          if (index === -1) {
+              arr.push(obj);
+          } else {
+              arr[index] = obj;
+          }
+        }
+        if (activity[activity.length - 1] > v) {
           const total = activity[activity.length - 1];
-          function pushToArray(arr, obj) {
-            const index = arr.findIndex((e) => e.value === obj.value);
-            if (index === -1) {
-                arr.push(obj);
-            } else {
-                arr[index] = obj;
+          pushToArray(medals, { icon: require("../../media/activity_medal.png"), value: total });
+        }
+        if (activity2[activity2.length - 1] > 3600) {
+          const total = activity2[activity2.length - 1];
+          pushToArray(medals, { icon: require("../../media/stamina_medal.png"), value: total });
+        }
+        if (activity3[activity3.length - 1] > 10) {
+          const total = activity3[activity3.length - 1];
+          pushToArray(medals, { icon: require("../../media/distance_medal.png"), value: total });
+        }
+        this.setState({ medals, bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(data.length), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined }, () => {
+          if (this.state.userData.data) {
+            function dateDiffInHours(a, b) {
+              const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+              const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+              return Math.floor((utc2 - utc1) / (1000 * 60 * 60));
+            }
+            const currentDate = new Date();
+            const activityDate = new Date(this.state.userData.data[this.state.userData.data.length - 1].date);
+            if (dateDiffInHours(activityDate, currentDate) < 24) {
+              this.setState({ progress: this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr });
             }
           }
-          let medals = this.state.medals;
-          pushToArray(medals, { icon: require("../../media/Medalje_01.png"), value: total })
-          this.setState({ medals });
-        }
-        this.setState({ bmr: v, userData: { name, email, profileImage, gender, born, weight, height, unit, data }, data: data ? { labels: getLastDays(5), datasets: [ { data: data.map(({ kjoules }) => kjoules) } ] } : undefined });
+        });
         setTimeout(() => this.setState({ iconClicked: false }), 600);
       });
     });
@@ -160,8 +205,8 @@ export default class TogetherProfile extends Component {
                   <Text style={styles.profileTextBig}>{this.state.userData.name}</Text>
                   <Text style={styles.profileText}>{this.state.userData.email}</Text>
                   {this.state.userData.born && (<Text style={styles.profileText}>{this.state.userData.born}</Text>)}
-                  {!this.state.iconClicked ? (<View style={{ flexDirection: "row" }}>{this.state.medals.map((medal, index) => (<Image key={index} style={{ width: 21, height: 33, marginHorizontal: 5 }} source={medal.icon} />))}
-                  </View>) : <ActivityIndicator size="small" color={colors.dark} />}
+                  {!this.state.iconClicked ? (<View style={{ flexDirection: "row", marginBottom: 5 }}>{this.state.medals.map((medal, index) => (<Image key={index} style={{ width: 23, height: 29, marginHorizontal: 5 }} source={medal.icon} />))}
+                  </View>) : <ActivityIndicator style={{ width: 23, height: 29, marginHorizontal: 5 }} size="small" color={colors.dark} />}
                 </View>
               </>)
             }
@@ -176,14 +221,17 @@ export default class TogetherProfile extends Component {
                   <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10, borderRightColor: colors.dark, borderRightWidth: StyleSheet.hairlineWidth }}>{this.state.userData.weight}{this.state.userData.unit === "metric" ? "kg" : "lb"}</Text>
                   <Text style={{ ...styles.profileTextBig, flex: 1, textAlign: "center", paddingVertical: 10 }}>{this.state.userData.height}{this.state.userData.unit === "metric" ? "cm" : "in"}</Text>
                 </View>)}
-                {this.state.userData && this.state.data && !this.state.iconClicked ? (
+                {this.state.userData && !this.state.iconClicked ? (
                   <View style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", marginTop: 15 }}>
                     <Text style={{ color: colors.light, fontSize: 28, textAlign: "center", marginBottom: -12, marginTop: -10 }}>{this.props.screenProps.currentLang.labels.activityPerDay}</Text>
-                    <ProgressBar
-                      color={colors.red}
-                      progress={this.state.userData.data[this.state.userData.data.length - 1].kcal / this.state.bmr}
-                      style={{ width: screenWidth/1.5, marginBottom: -15 }}
-                    />
+                    {this.state.data && (<>
+                      <ProgressBar
+                        color={this.state.progress >= 1 ? colors.light : (this.state.progress >= 0.5 && this.state.progress < 1 ? colors.blue : colors.red)}
+                        progress={this.state.progress}
+                        style={{ width: screenWidth/1.5, marginBottom: -15 }}
+                      />
+                      <View style={{ flexDirection: "row" }}><Text style={{ color: this.state.progress >= 1 ? colors.light : (this.state.progress >= 0.5 && this.state.progress < 1 ? colors.blue : colors.red), fontSize: 16, textAlign: "center" }}>{Math.round(this.state.userData.data[this.state.userData.data.length - 1].kcal)}</Text><Text style={{ color: colors.light, fontSize: 16, textAlign: "center" }}> / {Math.round(this.state.bmr)}</Text></View>
+                    </>)}
                     {this.state.userData.gender && (
                       <Icon name="refresh" onPress={() => this.refreshData()} color={colors.blue} size={28} iconStyle={{ backgroundColor: colors.dark }} containerStyle={{ position: "absolute", right: 14 }} />
                     )}
@@ -220,7 +268,7 @@ export default class TogetherProfile extends Component {
                     }}
                   />
                 </View>) : (this.state.iconClicked === true ? (<View style={{ height: 220, width: screenWidth, alignItems: "center", justifyContent: "center" }}><ActivityIndicator size="large" color={colors.blue} /></View>) : (this.state.userData.gender ? (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData}</Text>
+                <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData1}</Text><Icon color={colors.light} size={24} type="material-community" name="run" /><Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.labels.noData2}</Text>
                 </View>) : (<View style={{ height: 220, width: screenWidth, elevation: 2, flexDirection: "row", opacity: 0.75, marginTop: "auto", flexWrap: "wrap", alignItems: "center", justifyContent: "center", paddingHorizontal: 15 }}>
                 <Text style={{ textAlign: "center", fontSize: 20, color: colors.light }}>{this.props.screenProps.currentLang.errors.thirdPartyPassResetError}</Text>
                 </View>)))}

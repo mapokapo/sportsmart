@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, Keyboard, LayoutAnimation, UIManager, Image, Platform } from "react-native";
 import { Button, SocialIcon } from "react-native-elements";
 import { TextInput, Portal, Dialog, Menu, Divider, IconButton } from "react-native-paper";
+import Video from "react-native-video";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { AccessToken, LoginManager } from "react-native-fbsdk";
@@ -134,6 +135,15 @@ export default class LoginScreen extends Component {
   render = () => {
     return (
       <View style={styles.mainWrapper}>
+        {!this.state.keyboardOpened && (<Video
+          source={require("../../media/video.mp4")}
+          style={{ ...StyleSheet.absoluteFill }}
+          muted={true}
+          repeat={true}
+          disableFocus={true}
+          resizeMode={"cover"}
+          automaticallyWaitsToMinimizeStalling={false}
+        />)}
         <Portal>
           <Dialog visible={this.state.dialogText !== null} onDismiss={this.hideDialog}>
             <Dialog.Title>{this.props.screenProps.currentLang.labels.error}</Dialog.Title>
@@ -172,7 +182,7 @@ export default class LoginScreen extends Component {
         </Menu>
         {!this.state.keyboardOpened && (<View style={{ marginHorizontal: 15, flex: 4, justifyContent: "center", alignItems: "center" }}>
           <Image
-            source={require("../../media/sportsmart_icons/logo.png")}
+            source={require("../../media/sportsmart_icons/logo_transparent.png")}
             style={{ width: 225, height: 225 }}
           />
         </View>)}
@@ -181,7 +191,7 @@ export default class LoginScreen extends Component {
               this.setState({ loading: true }, async () => {
                 const result = await LoginManager.logInWithPermissions(["public_profile", "email"]);
                 const data = await AccessToken.getCurrentAccessToken();
-                if (result && data) {
+                if (result && !result.isCancelled && data) {
                   const credential = auth.FacebookAuthProvider.credential(data.accessToken);
                   auth().signInWithCredential(credential).then(user => {
                     firestore().collection("users").doc(user.user.uid).get().then(doc => {
@@ -219,6 +229,16 @@ export default class LoginScreen extends Component {
                   await GoogleSignin.hasPlayServices();
                   const userInfo = await GoogleSignin.signIn();
                   const credential = auth.GoogleAuthProvider.credential(userInfo.idToken, userInfo.accessToken);
+                  const methods = await auth().fetchSignInMethodsForEmail(userInfo.user.email);
+                  if (methods.includes("facebook.com")) {
+                    class CustomError extends Error {
+                      constructor(message, code) {
+                        super(message);
+                        this.code = code;
+                      }
+                    }
+                    throw new CustomError("Error", "auth/account-exists-with-different-credential");
+                  }
                   auth().signInWithCredential(credential).then(user => {
                     firestore().collection("users").doc(user.user.uid).get().then(doc => {
                       if (doc.exists) {
@@ -233,7 +253,11 @@ export default class LoginScreen extends Component {
                     });
                   });
                 } catch (error) {
-                  if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                  if (error.code === "auth/account-exists-with-different-credential") {
+                    this.setState({ loading: false }, () => {
+                      this.triggerDialog(this.props.screenProps.currentLang.errors.thirdPartyLoginError);
+                    });
+                  } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
                     this.triggerDialog(this.props.screenProps.currentLang.errors.googlePlayServicesMissing);
                   } else if (error.code === statusCodes.SIGN_IN_CANCELLED || error.code === statusCodes.IN_PROGRESS) {
                   } else {
@@ -296,8 +320,8 @@ export default class LoginScreen extends Component {
               }}
             />
             <View style={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row", flexWrap: "wrap" }}>
-              <TouchableOpacity onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.props.screenProps.currentLang.labels.registerText}</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16 }}>{this.props.screenProps.currentLang.labels.resetPassText}</Text></TouchableOpacity>
+              <TouchableOpacity style={{ flex: 1 }} onPress={() => this.props.navigation.navigate("Register")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16, textAlign: "center" }}>{this.props.screenProps.currentLang.labels.registerText}</Text></TouchableOpacity>
+              <TouchableOpacity style={{ flex: 1 }} onPress={() => this.props.navigation.navigate("ForgotPass")}><Text style={{ color: colors.blue, marginTop: -1, fontSize: 16, textAlign: "center" }}>{this.props.screenProps.currentLang.labels.resetPassText}</Text></TouchableOpacity>
             </View>
           </View>
           {this.state.currentError !== null && <Text style={styles.error}>{this.state.currentError}</Text>}
@@ -333,7 +357,8 @@ const styles = StyleSheet.create({
     color: colors.red,
     fontSize: 16,
     textAlign: "center",
-    marginTop: 10,
+    marginTop: 15,
+    marginBottom: "auto",
     lineHeight: 15
   }
 });
